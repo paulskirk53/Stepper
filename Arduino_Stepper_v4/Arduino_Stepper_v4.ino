@@ -38,7 +38,6 @@ int normalAcceleration;
 
 
 void setup() 
-
 {
   // put your setup code here, to run once:
 
@@ -124,7 +123,7 @@ void loop()
     Serial.println(" so a good sequence would be as follows");
     Serial.println("1 SA220#   slew to azimuth request");
     Serial.println("2 CL#      clockwise movement request");
-    Serial.println("3 SL180#   simulates te compass routine providing 180 degrees");
+    Serial.println("3 SL180#   simulates the compass routine providing 180 degrees");
     Serial.println("4 SL200#   tests the within 20 degrees bit which should reduce speed to one third");
     Serial.println("5 SL118#   should stop when this is entered because we are within the coded 5 degree window which defines target reached.");
     Serial.println(" ");
@@ -313,13 +312,13 @@ void loop()
 
 
 
-/* Serial.println(stepper.currentPosition());
+// Serial.println(stepper.currentPosition());
   }
   //Serial.print("TargetAzimuth = " );
   //Serial.print ( CurrentAzimuth);
   //Serial.println();
 } // end void
-*/
+
 
 
 
