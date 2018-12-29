@@ -104,14 +104,14 @@ void loop()
 	Serial.println("Target Az   " +  String( TargetAzimuth));
 	Serial.println("Current Az   " + String( CurrentAzimuth));
 
-  Serial.println(" so a good sequence would be as follows");
-  Serial.println("1 SA220#   slew to azimuth request");
-  Serial.println("2 CL#      clockwise movement request");
-  Serial.println("3 SL180#   simulates te compass routine providing 180 degrees");
-  Serial.println("4 SL200#   tests the within 20 degrees bit which should reduce speed to one third");
-  Serial.println("5 SL118#   should stop when this is entered because we are within the coded 5 degree window which defines target reached.");
-  Serial.println(" ");
-  Serial.println("emergency stop is ES#");
+    Serial.println(" so a good sequence would be as follows");
+    Serial.println("1 SA220#   slew to azimuth request");
+    Serial.println("2 CL#      clockwise movement request");
+    Serial.println("3 SL180#   simulates te compass routine providing 180 degrees");
+    Serial.println("4 SL200#   tests the within 20 degrees bit which should reduce speed to one third");
+    Serial.println("5 SL118#   should stop when this is entered because we are within the coded 5 degree window which defines target reached.");
+    Serial.println(" ");
+    Serial.println("emergency stop is ES#");
 
 // emergency stop is ES#
 
@@ -145,6 +145,9 @@ void loop()
 
         TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
         receivedData = "";
+
+		// write the target azimuth to the LCD screen
+
 		  stepper.setCurrentPosition(1);      // new in v4
       }
 
@@ -165,6 +168,7 @@ void loop()
         
         stepper.run();
         receivedData = "";
+		//write the direction to the LCD screen
 
       } // end if cl
 
@@ -180,6 +184,7 @@ void loop()
         
         stepper.run();
         receivedData = "";
+		//write the direction to the LCD screen
 
       } // end if cc
 
@@ -267,6 +272,9 @@ void loop()
 
 
         } // end false case
+
+		//write the slew status to the LCD screen
+
       }  // end SL case
 
 
