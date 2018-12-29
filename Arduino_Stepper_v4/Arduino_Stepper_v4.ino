@@ -3,6 +3,7 @@
 // library for stepper
 
 #include <AccelStepper.h>
+#include <LiquidCrystal.h>
 
 // Define a stepper and the pins it will use
 
@@ -12,6 +13,9 @@
 #define                dirPin  8
 #define                enaPin  9             // presently n/c - the enable pin
 
+//liquid crystal two lines below
+const int rs = 27, en = 26, d4 = 25, d5 = 24, d6 = 23, d7 = 22;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 
 //CREATE INSTANCE OF STEPPER MOTOR
@@ -76,8 +80,9 @@ void setup()
 
   */
   
- 
-}
+     lcd.begin(16, 2);
+
+} // end setup
 
 /*
   \\\\\\\\\\\\\\\\/////////////////////////\\\\\\\\\\\\\\\\\\\\\///////////////
@@ -91,7 +96,19 @@ void loop()
 {
   // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
 
+  /*
 
+  	    // set the cursor to column 0, line 0
+  	    // (note: line 1 is the second row, since counting begins with 0):
+  	    lcd.setCursor(0, 0);
+  	    lcd.print("Target Azimuth : ");
+  	    lcd.setCursor(0, 1);
+  	    lcd.print(lcdazimuth);
+
+
+
+
+  */
 
   if (Serial.available() > 0)                            // when serial data arrives capture it into a string
   {
