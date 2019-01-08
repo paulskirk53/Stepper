@@ -20,6 +20,7 @@
 #define ARDUINO_ARCH_AVR
 //
 //
+void distancechecker();
 
 #include "pins_arduino.h" 
 #include "arduino.h"

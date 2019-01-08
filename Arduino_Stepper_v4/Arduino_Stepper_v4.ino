@@ -26,6 +26,7 @@ AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 String receivedData;
 float TargetAzimuth, CurrentAzimuth;
 
+boolean endpointdone;
 boolean SlewStatus;           // controls whether the stepper is stepped in the main loop
 float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 boolean Clockwise;
@@ -68,6 +69,8 @@ void setup()
 	TargetAzimuth = 212.0;                 //these two changed from zero for test
 	CurrentAzimuth = 212.0;
 
+	// initialise 
+	
 
 	/*
 	default pos for electronics:
@@ -80,7 +83,11 @@ void setup()
 
 	*/
 
-	//lcd.begin(20, 4);              // 20 columns x 4 rows
+	lcd.begin(20, 4);              // 20 columns x 4 rows
+	
+
+	endpointdone = false;   // to facilitate one time execution of the endpoint setting when within 5 degrees of target
+
 
 } // end setup
 
@@ -108,8 +115,6 @@ void loop()
 	*/
 
 
-
-
 	if (Serial.available() > 0)                            // when serial data arrives capture it into a string
 	{
 
@@ -119,6 +124,12 @@ void loop()
 
 		if (receivedData.startsWith("TEST", 0))
 		{
+		lcd.setCursor(0, 0);
+		lcd.print("Test Received");
+		delay(1000);
+		lcd.clear();
+		delay(1000);
+		lcd.print("Test again");
 			Serial.println("Communications established, received  " + receivedData);
 			Serial.println("Target Az   " +  String( TargetAzimuth));
 			Serial.println("Current Az   " + String( CurrentAzimuth));
@@ -156,27 +167,24 @@ void loop()
 
 		if (receivedData.startsWith("SA", 0)) // SlewToAzimuth command from C# driver
 		{
-			char message;                         //used to hold the char value of TargetAzimuth
+			
 			//Serial.println(" 2 received SA   " + receivedData);   //TEST ONLY REMOVE
 			// strip off 1st 2 chars
 			receivedData.remove(0, 2);
 
 
 			TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
+			lcd.setCursor(0, 0);
+			lcd.print("Target Az: ");
+			lcd.setCursor(13,0);
+			lcd.print(receivedData);
 			receivedData = "";
-			// dtostrf(TargetAzimuth, 7, 2, message); // convert double to char total width 7 with 2 dp
-			//String lcdazimuth = String(message);
-			// write the target azimuth to the LCD screen
+			
 
 			//      Serial.println(" 3 received SA   " + receivedData);   //TEST ONLY REMOVE
-			//	lcd.setCursor(0, 0);
-			//	lcd.print("Target Azimuth :");
-			//	lcd.setCursor(1,1);
-			//	lcd.print(lcdazimuth);
-			//Serial.println("received SA   " + receivedData);
-			//  Serial.print(" 4 lcdazimuth ");
-			//  Serial.println(lcdazimuth);
+			
 			stepper.setCurrentPosition(1);      // new in v4
+			DecelFlag = false;                  // need to set this here 
 			//Serial.println(" EXIT SA  " );
 		}
 
@@ -196,6 +204,9 @@ void loop()
 			Clockwise = true;                           // used for deceleration
 
 			stepper.run();
+			lcd.setCursor(0, 2);
+			lcd.print("Direction Clockwise:");
+			
 			receivedData = "";
 			//write the direction to the LCD screen
 			//Serial.println("moving CLockwise EXIT CL  " );
@@ -236,7 +247,15 @@ void loop()
 
 
 			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
+
+			//PRINT TO LCD
+						lcd.setCursor(0, 1);
+						lcd.print("Current Az: ");
+						lcd.setCursor(13,1);
+						lcd.print(receivedData);
+			
 			receivedData = "";
+			
 			// decelerate if within 20 degrees to prevent overshoot
 			//
 
@@ -245,18 +264,19 @@ void loop()
 			{
 				Serial.print("within 20 deg  ");
 				DecelFlag = true;                       // set the flag so this code is only executed once
-				if (Clockwise)
-				{
-					stepper.setMaxSpeed(StepsPerSecond * 0.5); // reduce speed to one HALF - clockwise dir
+				//if (Clockwise)
+				//{
+					stepper.setMaxSpeed(StepsPerSecond * 0.25); // reduce speed to one HALF - clockwise dir
 					stepper.setAcceleration(normalAcceleration * 2);
 					stepper.run();
-				}
-				else                                    // else clause is counterclockwise movement of stepper
+				//}
+	/*			else                                    // else clause is counterclockwise movement of stepper
 				{
 					stepper.setMaxSpeed(StepsPerSecond * 0.5); // reduce speed to one HALF - anticlockwise dir
 					stepper.setAcceleration(normalAcceleration * 2);
 					stepper.run();
 				}
+	*/
 			}
 
 
@@ -265,11 +285,12 @@ void loop()
 			// which compare currentazimuth with targetazimuth
 
 			// 1 current az and target az are within 5 degrees
-			//
-			if (abs(CurrentAzimuth - TargetAzimuth) < 5.0)
+			//problem below is repeated sl requests don't allow the motor to stop.
+
+			if ((abs(CurrentAzimuth - TargetAzimuth) < 5.0  ) && (endpointdone == false))  
 			{
 
-
+			endpointdone=true;
 
 				// new code for v4
 				if (Clockwise)
@@ -283,52 +304,76 @@ void loop()
 					stepper.moveTo(stepper.currentPosition() - 100);
 				}
 
-				// new code end v4
-
-
-
-
 			}  // end true case
 
-			else // if the two angles are not within 5 deg then the motor is still going
+			  // if the two angles are not within 5 deg then the motor is still going
 
+			
+				
+			//	Serial.print("Moving");               // sent to serial USB and picked up by the driver
+			//	Serial.println("#");
+
+			//CALL distance checker
+
+
+			distancechecker();
+
+			if (SlewStatus)
 			{
-				SlewStatus = true;
-				Serial.print("Moving");               // sent to serial USB and picked up by the driver
-				Serial.println("#");
+				   Serial.print("Moving");
+				   Serial.println("#");
+				 }
+				 else
+				 {
+				 	Serial.print("Notmoving");               // sent to serial USB and picked up by the driver
+				 	Serial.println("#");
+					endpointdone=false;                      //reset the flag which controls one time execution of the 5 degree window
+				 }
 
-				//  Serial.println("Target Az is " + String(TargetAzimuth,2));
-				//  Serial.println("current Az is " + String(CurrentAzimuth,2));
-
-
-			} // end false case
-
-			//write the slew status to the LCD screen
+				// SlewStatus = true;
+			 
 
 		}  // end SL case
 
 
-
 	}  // end software serial
+
+
 	if (SlewStatus)
 	{
 		stepper.run();
-
-		if (abs(stepper.distanceToGo()) < 2)
-		{
-			SlewStatus = false;
-			DecelFlag = false;
-			stepper.setAcceleration(normalAcceleration);
-			Serial.print("Notmoving");                   // sent to serial USB and picked up by the driver
-			Serial.println("#");
-			//Serial.println("stopped stepper");
-		}
-
-
-
-		// Serial.println(stepper.currentPosition());
 	}
+	
 	//Serial.print("TargetAzimuth = " );
 	//Serial.print ( CurrentAzimuth);
 	//Serial.println();
+
 } // end void
+
+void distancechecker()
+{
+if (SlewStatus)
+{
+	stepper.run();
+
+	
+	if (abs(stepper.distanceToGo()) < 2)
+	{
+		SlewStatus = false;
+		DecelFlag = false;
+		stepper.setAcceleration(normalAcceleration);
+		//		Serial.print("Notmoving");                   // sent to serial USB and picked up by the driver
+		//		Serial.println("#");
+		lcd.setCursor(0, 2);
+		lcd.print("Movement Stopped.   ");
+		//Serial.println("stopped stepper");
+	}
+
+
+
+	// Serial.println(stepper.currentPosition());
+}
+
+
+
+}
