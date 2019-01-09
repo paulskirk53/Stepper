@@ -129,9 +129,9 @@ void loop()
 			Serial.println("Target Az   " +  String( TargetAzimuth));
 			Serial.println("Current Az   " + String( CurrentAzimuth));
 
-			Serial.println(" so a good sequence would be as follows");
-			Serial.println("1 SA220#   slew to azimuth request");
-			Serial.println("2 CL#      clockwise movement request");
+			Serial.println(" so a good sequence would be as follows IN THE ORDER RECEIVED FROM the driver....");
+			Serial.println("1 CL#      clockwise movement request");
+			Serial.println("2 SA220#   slew to azimuth request");
 			Serial.println("3 SL180#   simulates the compass routine providing 180 degrees");
 			Serial.println("4 SL201#   tests the within 20 degrees bit which should reduce speed to one third");
 			Serial.println("5 SL218#   should stop when this is entered because we are within the coded 5 degree window which defines target reached.");
@@ -139,7 +139,7 @@ void loop()
 			Serial.println("emergency stop is ES#");
 
 			// emergency stop is ES#
-
+			//
 
 		}
 
@@ -207,7 +207,7 @@ void loop()
 			stepper.moveTo(30000);                      //  Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
 			lcd.setCursor(0, 2);
-			lcd.print("Direction Clockwise:");
+			lcd.print("Moving Clockwise");
 			
 			receivedData = "";
 			//write the direction to the LCD screen
@@ -228,6 +228,9 @@ void loop()
 			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
 			stepper.moveTo(-30000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
+			lcd.setCursor(0, 2);
+			lcd.print("Moving Anticlockwise");
+			
 			receivedData = "";
 			//write the direction to the LCD screen
 
@@ -285,7 +288,7 @@ void loop()
 
 		within_twenty_degrees();             //check at start - what value is 212 going to cause
 		within_five_degrees();               //check at start - what value is 212 going to cause
-		distancechecker();
+		distancechecker();                   // Check how close to the endpoint and reset flags for motor stop and initialisation of variables
 
 
 		stepper.run();
