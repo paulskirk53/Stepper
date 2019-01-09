@@ -115,7 +115,7 @@ void loop()
 
 		receivedData = Serial.readStringUntil('#');          // read a string from PC serial port usb
 
-		Serial.println(" 1 received  " + receivedData);    //TEST ONLY REMOVE
+	//	Serial.println(" 1 received  " + receivedData);    //TEST ONLY REMOVE
 
 		if (receivedData.startsWith("TEST", 0))
 		{
@@ -147,9 +147,7 @@ void loop()
 		if (receivedData.startsWith("ES", 0))               // Emergency stop requested from C# driver
 		{
 
-			stepper.stop();
-			SlewStatus = false;
-			DecelFlag = false;
+			Emergency_Stop();
 		}                                                   // end Emergency Stop else clause
 
 
@@ -171,7 +169,11 @@ void loop()
 			TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 			// if target < min or target > max need to do something to avoid collision at pulley
 
-
+			if ((TargetAzimuth < 1.0 ) || (TargetAzimuth >360.0))   //error trap azimuth value
+			{
+			Emergency_Stop();
+			}
+			
 			lcd.setCursor(0, 0);
 			lcd.print("Target Az: ");
 			lcd.setCursor(13,0);
@@ -206,6 +208,7 @@ void loop()
 			stepper.setCurrentPosition(15)  ;                //outside the aceel/ decel range checker
 			stepper.moveTo(30000);                      //  Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
+			lcd.clear();
 			lcd.setCursor(0, 2);
 			lcd.print("Moving Clockwise");
 			
@@ -228,6 +231,7 @@ void loop()
 			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
 			stepper.moveTo(-30000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
+			lcd.clear();
 			lcd.setCursor(0, 2);
 			lcd.print("Moving Anticlockwise");
 			
@@ -254,6 +258,13 @@ void loop()
 
 
 			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
+
+
+			if ((CurrentAzimuth < 1.0 ) || (CurrentAzimuth >360.0))   //error trap azimuth value
+			{
+				Emergency_Stop();
+			}
+
 
 			//PRINT TO LCD
 			lcd.setCursor(0, 1);
@@ -294,7 +305,7 @@ void loop()
 		stepper.run();
 	}
 	
-
+	
 
 } // end void
 
@@ -362,15 +373,25 @@ void within_twenty_degrees()
 
 	if ((abs(CurrentAzimuth - TargetAzimuth) < 20.0) && (DecelFlag == false))  // within 20 degrees of target....
 	{
-		Serial.print("within 20 deg  ");
-		DecelFlag = true;                       // set the flag so this code is only executed once
-		stepper.setMaxSpeed(StepsPerSecond * 0.25); // reduce speed to one HALF - clockwise dir
+		//Serial.print("within 20 deg  ");            // TESTING
+		DecelFlag = true;                             // set the flag so this code is only executed once
+		stepper.setMaxSpeed(StepsPerSecond * 0.25);   // reduce speed to one HALF - clockwise dir
 		stepper.setAcceleration(normalAcceleration * 2);
 		stepper.run();
 		
 	}
 
+}
+void Emergency_Stop()
+{
 
-
+stepper.stop();
+SlewStatus = false;
+DecelFlag = false;
+endpointdone = false;
+lcd.setCursor(0, 2);
+lcd.print("Data Error          ");
+lcd.setCursor(0, 3);
+lcd.print("Movement Stopped.   ");
 
 }

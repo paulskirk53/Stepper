@@ -23,6 +23,7 @@
 void distancechecker();
 void within_five_degrees();
 void within_twenty_degrees();
+void Emergency_Stop();
 
 #include "pins_arduino.h" 
 #include "arduino.h"
