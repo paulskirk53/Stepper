@@ -1,6 +1,6 @@
-
+// set slew status as false in setup. don't cal 20 deg, 5 deg or distancechecker unless slewstatus is true
+// if targetaz < min or targetaz > max need to do something to avoid collision at pulley//
 //
-// THE serial prints numbers 2 to 4 in SA fail - try a different board
 // library for stepper
 
 #include <AccelStepper.h>
@@ -53,27 +53,22 @@ void setup()
 	stepper.setMaxSpeed(StepsPerSecond);			   // steps per second see below -
 	// the controller electronics is set to 0.25 degree steps, so 15 stepspersecond*0.25= 3.75 degrees of shaft movement per second
 	stepper.setAcceleration(normalAcceleration);     // steps per second per second.
-	// Note V= acceleration * time, so a vlue of e.g. 1 step /s/s takes 10 secs to reach maxspeed of 10
-	// so with the values we have set currently it takes 15 seconds
-	// to get to the speed of 15 see how this goes empirically
+	// Note V= acceleration * time, so a vlue of e.g. 1 step /s/s takes 10 secs to reach maxspeed of 10 or 15 secs to reach maxspeed 15 etc
+	//
+	// see how the speed of 15 goes empirically
 	// with a 10 cm diameter drive wheel on the shaft, calculations show 20 shaft rotations
 	// are required to move the dome through approx one revolution and this works out to be 27600 steps for one dome rotation
 
 
 
-	stepper.setCurrentPosition(1);      // new in v4
-
-
-
 	// initialise slewtoAz, currentazimuth
-	TargetAzimuth = 212.0;                 //these two changed from zero for test
-	CurrentAzimuth = 212.0;
+	TargetAzimuth = 270.0;                 //these two need to be separated by at least 20 degrees as the initial starting condition
+	CurrentAzimuth = 180.0;
 
-	// initialise 
 	
 
 	/*
-	default pos for electronics:
+	default pos for MA860H controller switches:
 	5     6    7    8
 	on   off  off  off = smallest step size
 
@@ -124,12 +119,12 @@ void loop()
 
 		if (receivedData.startsWith("TEST", 0))
 		{
-		lcd.setCursor(0, 0);
-		lcd.print("Test Received");
-		delay(1000);
-		lcd.clear();
-		delay(1000);
-		lcd.print("Test again");
+			lcd.setCursor(0, 0);
+			lcd.print("Test Received");
+			delay(1000);
+			lcd.clear();
+			delay(1000);
+			lcd.print("Test again");
 			Serial.println("Communications established, received  " + receivedData);
 			Serial.println("Target Az   " +  String( TargetAzimuth));
 			Serial.println("Current Az   " + String( CurrentAzimuth));
@@ -174,6 +169,9 @@ void loop()
 
 
 			TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
+			// if target < min or target > max need to do something to avoid collision at pulley
+
+
 			lcd.setCursor(0, 0);
 			lcd.print("Target Az: ");
 			lcd.setCursor(13,0);
@@ -183,9 +181,10 @@ void loop()
 
 			//      Serial.println(" 3 received SA   " + receivedData);   //TEST ONLY REMOVE
 			
-			stepper.setCurrentPosition(1);      // new in v4
-			DecelFlag = false;                  // need to set this here 
+			//stepper.setCurrentPosition(1);      // new in v4
+			
 			//Serial.println(" EXIT SA  " );
+			
 		}
 
 
@@ -194,7 +193,7 @@ void loop()
 		{
 			//Serial.println("moving CLockwise START CL  " );
 			//Serial.println("moving CLockwise   " + receivedData);
-			stepper.moveTo(30000);                      //  Negative is anticlockwise pos is clockwise from the 0 position.
+			
 
 			// used 30000 as one full rev of dome and this should therefore cover any size slew
 
@@ -202,7 +201,10 @@ void loop()
 			stepper.setAcceleration(normalAcceleration);
 			SlewStatus = true;
 			Clockwise = true;                           // used for deceleration
-
+			DecelFlag = false;                  // need to set this here
+			
+			stepper.setCurrentPosition(15)  ;                //outside the aceel/ decel range checker
+			stepper.moveTo(30000);                      //  Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
 			lcd.setCursor(0, 2);
 			lcd.print("Direction Clockwise:");
@@ -217,12 +219,14 @@ void loop()
 		{
 
 			//Serial.println("moving counter clockwise   " + receivedData); C
-			stepper.moveTo(-30000);                      //  Negative is anticlockwise pos is clockwise from the 0 position.
+			
 			stepper.setMaxSpeed(StepsPerSecond);           //  must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
 			SlewStatus = true;
 			Clockwise = false;                           // used for deceleration
-
+			DecelFlag = false;                           // need to set this here
+			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
+			stepper.moveTo(-30000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
 			receivedData = "";
 			//write the direction to the LCD screen
@@ -249,130 +253,120 @@ void loop()
 			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 
 			//PRINT TO LCD
-						lcd.setCursor(0, 1);
-						lcd.print("Current Az: ");
-						lcd.setCursor(13,1);
-						lcd.print(receivedData);
+			lcd.setCursor(0, 1);
+			lcd.print("Current Az: ");
+			lcd.setCursor(13,1);
+			lcd.print(receivedData);
 			
 			receivedData = "";
 			
-			// decelerate if within 20 degrees to prevent overshoot
-			//
-
-
-			if ((abs(CurrentAzimuth - TargetAzimuth) < 20.0) && (DecelFlag == false))  // within 20 degrees of target....
-			{
-				Serial.print("within 20 deg  ");
-				DecelFlag = true;                       // set the flag so this code is only executed once
-				//if (Clockwise)
-				//{
-					stepper.setMaxSpeed(StepsPerSecond * 0.25); // reduce speed to one HALF - clockwise dir
-					stepper.setAcceleration(normalAcceleration * 2);
-					stepper.run();
-				//}
-	/*			else                                    // else clause is counterclockwise movement of stepper
-				{
-					stepper.setMaxSpeed(StepsPerSecond * 0.5); // reduce speed to one HALF - anticlockwise dir
-					stepper.setAcceleration(normalAcceleration * 2);
-					stepper.run();
-				}
-	*/
-			}
-
-
-
-			// now code cases 1 and 2 from arduino stepper process in spreadsheet
-			// which compare currentazimuth with targetazimuth
-
-			// 1 current az and target az are within 5 degrees
-			//problem below is repeated sl requests don't allow the motor to stop.
-
-			if ((abs(CurrentAzimuth - TargetAzimuth) < 5.0  ) && (endpointdone == false))  
-			{
-
-			endpointdone=true;
-
-				// new code for v4
-				if (Clockwise)
-				{
-					// Serial.println(stepper.currentPosition());                // FOR TESTING
-					stepper.moveTo(stepper.currentPosition() + 100);             // set the end point so deceleration can happen
-					// Serial.println(stepper.currentPosition());                // FOR TESTING
-				}
-				else                                    // else clause is counterclockwise movement of stepper
-				{
-					stepper.moveTo(stepper.currentPosition() - 100);
-				}
-
-			}  // end true case
-
-			  // if the two angles are not within 5 deg then the motor is still going
-
-			
-				
 			//	Serial.print("Moving");               // sent to serial USB and picked up by the driver
 			//	Serial.println("#");
 
-			//CALL distance checker
-
-
-			distancechecker();
-
 			if (SlewStatus)
 			{
-				   Serial.print("Moving");
-				   Serial.println("#");
-				 }
-				 else
-				 {
-				 	Serial.print("Notmoving");               // sent to serial USB and picked up by the driver
-				 	Serial.println("#");
-					endpointdone=false;                      //reset the flag which controls one time execution of the 5 degree window
-				 }
-
-				// SlewStatus = true;
-			 
-
+				Serial.print("Moving");
+				Serial.println("#");
+			}
+			else
+			{
+				Serial.print("Notmoving");               // sent to serial USB and picked up by the driver
+				Serial.println("#");
+				endpointdone=false;                      //reset the flag which controls one time execution of the 5 degree window
+			}
+			
 		}  // end SL case
 
 
 	}  // end software serial
 
-
-	if (SlewStatus)
+	if (SlewStatus)                    // if the slew status is true, run the stepper and check for decel and stopping
 	{
+
+		within_twenty_degrees();             //check at start - what value is 212 going to cause
+		within_five_degrees();               //check at start - what value is 212 going to cause
+		distancechecker();
+
+
 		stepper.run();
 	}
 	
-	//Serial.print("TargetAzimuth = " );
-	//Serial.print ( CurrentAzimuth);
-	//Serial.println();
+
 
 } // end void
 
 void distancechecker()
 {
-if (SlewStatus)
-{
-	stepper.run();
+
 
 	
-	if (abs(stepper.distanceToGo()) < 2)
+	if (abs(stepper.distanceToGo()) < 10)               // within 10 steps of target
 	{
-		SlewStatus = false;
-		DecelFlag = false;
+		SlewStatus = false;                             //used to stop the motor in main loop
+		DecelFlag = false;                              // reset this so that decel can happen again when new move commands come in
+		endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
 		stepper.setAcceleration(normalAcceleration);
-		//		Serial.print("Notmoving");                   // sent to serial USB and picked up by the driver
-		//		Serial.println("#");
+		TargetAzimuth= CurrentAzimuth +25.0;
 		lcd.setCursor(0, 2);
 		lcd.print("Movement Stopped.   ");
-		//Serial.println("stopped stepper");
+		
+		// Serial.println(stepper.currentPosition());
 	}
 
-
-
-	// Serial.println(stepper.currentPosition());
 }
+
+
+
+void within_five_degrees()
+{
+
+	// now code cases 1 and 2 from arduino stepper process in spreadsheet
+	// which compare currentazimuth with targetazimuth
+
+	// 1 current az and target az are within 5 degrees
+	//problem below is repeated sl requests don't allow the motor to stop.
+
+	if ((abs(CurrentAzimuth - TargetAzimuth) < 5.0  ) && (endpointdone == false))
+	{
+
+		endpointdone=true;
+
+		// new code for v4
+		if (Clockwise)
+		{
+			// Serial.println(stepper.currentPosition());                // FOR TESTING
+			stepper.moveTo(stepper.currentPosition() + 100);             // set the end point so deceleration can happen
+			// Serial.println(stepper.currentPosition());                // FOR TESTING
+		}
+		else                                    // else clause is counterclockwise movement of stepper
+		{
+			stepper.moveTo(stepper.currentPosition() - 100);
+		}
+
+	}  // end true case
+
+	// if the two angles are not within 5 deg then the motor is still going
+
+
+}
+
+void within_twenty_degrees()
+{
+
+	// decelerate if within 20 degrees to prevent overshoot
+	//
+
+
+	if ((abs(CurrentAzimuth - TargetAzimuth) < 20.0) && (DecelFlag == false))  // within 20 degrees of target....
+	{
+		Serial.print("within 20 deg  ");
+		DecelFlag = true;                       // set the flag so this code is only executed once
+		stepper.setMaxSpeed(StepsPerSecond * 0.25); // reduce speed to one HALF - clockwise dir
+		stepper.setAcceleration(normalAcceleration * 2);
+		stepper.run();
+		
+	}
+
 
 
 

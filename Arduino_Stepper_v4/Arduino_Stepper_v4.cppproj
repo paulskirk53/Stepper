@@ -56,7 +56,7 @@
     <ListValues>
       <Value>__AVR_ATmega2560__</Value>
       <Value>_VMDEBUG=1</Value>
-      <Value>ARDUINO=10805</Value>
+      <Value>ARDUINO=10808</Value>
       <Value>ARDUINO_MAIN</Value>
       <Value>F_CPU=16000000L</Value>
       <Value>__AVR__</Value>
@@ -93,7 +93,7 @@
     <ListValues>
       <Value>__AVR_ATmega2560__</Value>
       <Value>_VMDEBUG=1</Value>
-      <Value>ARDUINO=10805</Value>
+      <Value>ARDUINO=10808</Value>
       <Value>ARDUINO_MAIN</Value>
       <Value>F_CPU=16000000L</Value>
       <Value>__AVR__</Value>
@@ -440,7 +440,7 @@ build.arch=AVR
     <ListValues>
       <Value>__AVR_ATmega2560__</Value>
       <Value>_VMDEBUG=1</Value>
-      <Value>ARDUINO=10805</Value>
+      <Value>ARDUINO=10808</Value>
       <Value>ARDUINO_MAIN</Value>
       <Value>F_CPU=16000000L</Value>
       <Value>__AVR__</Value>
@@ -477,7 +477,7 @@ build.arch=AVR
     <ListValues>
       <Value>__AVR_ATmega2560__</Value>
       <Value>_VMDEBUG=1</Value>
-      <Value>ARDUINO=10805</Value>
+      <Value>ARDUINO=10808</Value>
       <Value>ARDUINO_MAIN</Value>
       <Value>F_CPU=16000000L</Value>
       <Value>__AVR__</Value>

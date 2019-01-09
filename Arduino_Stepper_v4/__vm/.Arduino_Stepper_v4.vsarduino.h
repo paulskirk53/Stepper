@@ -21,6 +21,8 @@
 //
 //
 void distancechecker();
+void within_five_degrees();
+void within_twenty_degrees();
 
 #include "pins_arduino.h" 
 #include "arduino.h"
