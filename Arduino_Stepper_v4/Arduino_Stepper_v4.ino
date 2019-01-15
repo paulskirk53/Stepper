@@ -389,9 +389,10 @@ stepper.stop();
 SlewStatus = false;
 DecelFlag = false;
 endpointdone = false;
+lcd.setCursor(0, 0);
+lcd.print("Data Error - Stopped");
+lcd.setCursor(0, 1);
+lcd.print("Target or Current Az");
 lcd.setCursor(0, 2);
-lcd.print("Data Error          ");
-lcd.setCursor(0, 3);
-lcd.print("Movement Stopped.   ");
-
+lcd.print("range error");
 }
