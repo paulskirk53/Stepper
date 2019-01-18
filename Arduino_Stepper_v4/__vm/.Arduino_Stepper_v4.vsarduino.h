@@ -23,7 +23,7 @@
 void distancechecker();
 void within_five_degrees();
 void within_twenty_degrees();
-void Emergency_Stop();
+void Emergency_Stop(double azimuth, String mess);
 
 #include "pins_arduino.h" 
 #include "arduino.h"

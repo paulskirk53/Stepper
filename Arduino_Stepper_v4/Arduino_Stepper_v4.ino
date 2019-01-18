@@ -98,18 +98,6 @@ void loop()
 {
 	// put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
 
-	/*
-
-	// set the cursor to column 0, line 0
-	// (note: line 1 is the second row, since counting begins with 0):
-	lcd.setCursor(0, 0);
-	lcd.print("Target Azimuth : ");
-	lcd.setCursor(0, 1);
-	lcd.print(lcdazimuth);
-
-	*/
-
-
 	if (Serial.available() > 0)                            // when serial data arrives capture it into a string
 	{
 
@@ -147,7 +135,7 @@ void loop()
 		if (receivedData.startsWith("ES", 0))               // Emergency stop requested from C# driver
 		{
 
-			Emergency_Stop();
+			Emergency_Stop(TargetAzimuth, "Received ES");
 		}                                                   // end Emergency Stop else clause
 
 
@@ -161,7 +149,7 @@ void loop()
 		if (receivedData.startsWith("SA", 0)) // SlewToAzimuth command from C# driver
 		{
 			
-			//Serial.println(" 2 received SA   " + receivedData);   //TEST ONLY REMOVE
+			
 			// strip off 1st 2 chars
 			receivedData.remove(0, 2);
 
@@ -169,33 +157,26 @@ void loop()
 			TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 			// if target < min or target > max need to do something to avoid collision at pulley
 
-			if ((TargetAzimuth < 1.0 ) || (TargetAzimuth >360.0))   //error trap azimuth value
-			{
-			Emergency_Stop();
-			}
-			
 			lcd.setCursor(0, 0);
-			lcd.print("Target Az: ");
+		    lcd.print("Target Az: ");
 			lcd.setCursor(13,0);
 			lcd.print(receivedData);
-			receivedData = "";
+
+
+			if ((TargetAzimuth < 10.0 ) || (TargetAzimuth >350.0))   //error trap azimuth value
+			{
+			Emergency_Stop(TargetAzimuth, "Target Az failure   ");
+			}
 			
 
-			//      Serial.println(" 3 received SA   " + receivedData);   //TEST ONLY REMOVE
-			
-			//stepper.setCurrentPosition(1);      // new in v4
-			
-			//Serial.println(" EXIT SA  " );
-			
+			receivedData = "";
+				
 		}
 
 
 
 		if (receivedData.startsWith("CL", 0))        //   clockwise Slew command from C# driver
 		{
-			//Serial.println("moving CLockwise START CL  " );
-			//Serial.println("moving CLockwise   " + receivedData);
-			
 
 			// used 30000 as one full rev of dome and this should therefore cover any size slew
 
@@ -213,16 +194,13 @@ void loop()
 			lcd.print("Moving Clockwise");
 			
 			receivedData = "";
-			//write the direction to the LCD screen
-			//Serial.println("moving CLockwise EXIT CL  " );
+
 
 		} // end if cl
 
 		if (receivedData.startsWith("CC", 0)) //  counter clockwise Slew command from C# driver
 		{
 
-			//Serial.println("moving counter clockwise   " + receivedData); C
-			
 			stepper.setMaxSpeed(StepsPerSecond);           //  must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
 			SlewStatus = true;
@@ -250,8 +228,6 @@ void loop()
 
 		if (receivedData.startsWith("SL", 0)) // Receive the Current AZ via driver from Compass
 		{
-			//Serial.println("received SL   " + receivedData);
-			//
 
 			// strip off 1st 2 chars
 			receivedData.remove(0, 2);
@@ -259,24 +235,22 @@ void loop()
 
 			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 
-
-			if ((CurrentAzimuth < 1.0 ) || (CurrentAzimuth >360.0))   //error trap azimuth value
-			{
-				Emergency_Stop();
-			}
-
-
-			//PRINT TO LCD
+						//PRINT TO LCD
 			lcd.setCursor(0, 1);
 			lcd.print("Current Az: ");
 			lcd.setCursor(13,1);
 			lcd.print(receivedData);
+
+			if ((CurrentAzimuth < 10.0 ) || (CurrentAzimuth >350.0))   //error trap azimuth value
+			{
+				Emergency_Stop(CurrentAzimuth, "Current Az failure  ");
+			}
+
+
+
 			
 			receivedData = "";
 			
-			//	Serial.print("Moving");               // sent to serial USB and picked up by the driver
-			//	Serial.println("#");
-
 			if (SlewStatus)
 			{
 				Serial.print("Moving");
@@ -324,7 +298,6 @@ void distancechecker()
 		lcd.setCursor(0, 2);
 		lcd.print("Movement Stopped.   ");
 		
-		// Serial.println(stepper.currentPosition());
 	}
 
 }
@@ -348,9 +321,7 @@ void within_five_degrees()
 		// new code for v4
 		if (Clockwise)
 		{
-			// Serial.println(stepper.currentPosition());                // FOR TESTING
-			stepper.moveTo(stepper.currentPosition() + 100);             // set the end point so deceleration can happen
-			// Serial.println(stepper.currentPosition());                // FOR TESTING
+		  stepper.moveTo(stepper.currentPosition() + 100);             // set the end point so deceleration can happen
 		}
 		else                                    // else clause is counterclockwise movement of stepper
 		{
@@ -373,7 +344,7 @@ void within_twenty_degrees()
 
 	if ((abs(CurrentAzimuth - TargetAzimuth) < 20.0) && (DecelFlag == false))  // within 20 degrees of target....
 	{
-		//Serial.print("within 20 deg  ");            // TESTING
+		
 		DecelFlag = true;                             // set the flag so this code is only executed once
 		stepper.setMaxSpeed(StepsPerSecond * 0.25);   // reduce speed to one HALF - clockwise dir
 		stepper.setAcceleration(normalAcceleration * 2);
@@ -382,17 +353,21 @@ void within_twenty_degrees()
 	}
 
 }
-void Emergency_Stop()
+void Emergency_Stop(double azimuth, String mess)
 {
 
 stepper.stop();
 SlewStatus = false;
 DecelFlag = false;
 endpointdone = false;
+
+lcd.clear();
 lcd.setCursor(0, 0);
-lcd.print("Data Error - Stopped");
+lcd.print("Range error -Stopped");
+
 lcd.setCursor(0, 1);
-lcd.print("Target or Current Az");
+lcd.print(mess);
+
 lcd.setCursor(0, 2);
-lcd.print("range error");
+lcd.print(azimuth);
 }
