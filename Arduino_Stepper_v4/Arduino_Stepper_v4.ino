@@ -1,6 +1,8 @@
-// set slew status as false in setup. don't cal 20 deg, 5 deg or distancechecker unless slewstatus is true
-// if targetaz < min or targetaz > max need to do something to avoid collision at pulley//
-//
+// 
+// if TargetAz < min or targetaz > max need to do something to avoid collision at pulley//
+// Calculations for the stepper with the driver set to 0.25 degree steps show that 35000 (thirty five thousand)
+// steps are necessary to pull in enough cord to do a half rotation of the dome. So the figure of 30,000 set when the software
+// was written initially had to be increased to a bigger number - it's now set at 300,000 which is way bigger than any slew would need.
 // library for stepper
 
 #include <AccelStepper.h>
@@ -43,16 +45,16 @@ void setup()
 {
 	// put your setup code here, to run once:
 
-	Serial.begin(9600);                    // start serial ports - usb with PC
-	stepper.stop();                         // set initial state as stopped
+	Serial.begin(9600);                           // start serial ports - usb with PC
+	stepper.stop();                               // set initial state as stopped
 	// Change below to suit the stepper
 	DecelFlag = false;
 	SlewStatus = false;
-	StepsPerSecond = 45.0; // changed from 30 to 45 on 30-1-19 as a speed up test
-	normalAcceleration = 2; // changed from 1 to 2 on 30-1-19 as a speed up test
-	stepper.setMaxSpeed(StepsPerSecond);			   // steps per second see below -
+	StepsPerSecond = 100.0;                       // changed following empirical testing
+	normalAcceleration = 5;                       // changed following empirical testing
+	stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
 	// the controller electronics is set to 0.25 degree steps, so 15 stepspersecond*0.25= 3.75 degrees of shaft movement per second
-	stepper.setAcceleration(normalAcceleration);     // steps per second per second.
+	stepper.setAcceleration(normalAcceleration);  // steps per second per second.
 	// Note V= acceleration * time, so a vlue of e.g. 1 step /s/s takes 10 secs to reach maxspeed of 10 or 15 secs to reach maxspeed 15 etc
 	//
 	// see how the speed of 15 goes empirically
@@ -62,9 +64,9 @@ void setup()
 
 
 	// initialise slewtoAz, currentazimuth
-	TargetAzimuth = 270.0;                 //these two need to be separated by at least 20 degrees as the initial starting condition
-	CurrentAzimuth = 180.0;
-
+	TargetAzimuth = 270.0;                    // these two need to be separated by at least 20 degrees as the initial starting condition
+	CurrentAzimuth = 180.0;                   // this is the starting position for the dome. It's not good as a park position though
+	                                          // due to rain blowing in from SW direction.
 	
 
 	/*
@@ -78,10 +80,10 @@ void setup()
 
 	*/
 
-	lcd.begin(20, 4);              // 20 columns x 4 rows
+	lcd.begin(20, 4);                      // 20 columns x 4 rows
 	
 
-	endpointdone = false;   // to facilitate one time execution of the endpoint setting when within 5 degrees of target
+	endpointdone = false;                  // to facilitate one time execution of the endpoint setting when within 5 degrees of target
 
 
 } // end setup
@@ -98,12 +100,12 @@ void loop()
 {
 	// put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
 
-	if (Serial.available() > 0)                            // when serial data arrives capture it into a string
+	if (Serial.available() > 0)                              // when serial data arrives capture it into a string
 	{
 
 		receivedData = Serial.readStringUntil('#');          // read a string from PC serial port usb
 
-	//	Serial.println(" 1 received  " + receivedData);    //TEST ONLY REMOVE
+
 
 		if (receivedData.startsWith("TEST", 0))
 		{
@@ -141,7 +143,7 @@ void loop()
 
 
 		//*************************************************************************
-		//******** code the SA process below **************************************
+		//******** code for SA process below **************************************
 		//**** example of data sent by driver SA220.00#  **************************
 		//**** SA command is followed in the driver by sending CL# or CC# *********
 		//*************************************************************************
@@ -175,19 +177,19 @@ void loop()
 
 
 
-		if (receivedData.startsWith("CL", 0))        //   clockwise Slew command from C# driver
+		if (receivedData.startsWith("CL", 0))            // clockwise Slew command from C# driver
 		{
 
 			// used 30000 as one full rev of dome and this should therefore cover any size slew
 
-			stepper.setMaxSpeed(StepsPerSecond);           //  must call this following moveto
+			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
 			SlewStatus = true;
-			Clockwise = true;                           // used for deceleration
-			DecelFlag = false;                  // need to set this here
+			Clockwise = true;                            // used for deceleration
+			DecelFlag = false;                           // need to set this here
 			
-			stepper.setCurrentPosition(15)  ;                //outside the aceel/ decel range checker
-			stepper.moveTo(30000);                      //  Negative is anticlockwise pos is clockwise from the 0 position.
+			stepper.setCurrentPosition(15)  ;            // outside the aceel/ decel range checker
+			stepper.moveTo(300000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
 			lcd.clear();
 			lcd.setCursor(0, 2);
@@ -201,13 +203,13 @@ void loop()
 		if (receivedData.startsWith("CC", 0)) //  counter clockwise Slew command from C# driver
 		{
 
-			stepper.setMaxSpeed(StepsPerSecond);           //  must call this following moveto
+			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
 			SlewStatus = true;
 			Clockwise = false;                           // used for deceleration
 			DecelFlag = false;                           // need to set this here
 			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
-			stepper.moveTo(-30000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
+			stepper.moveTo(-300000);                     // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
 			lcd.clear();
 			lcd.setCursor(0, 2);
@@ -221,7 +223,7 @@ void loop()
 
 
 		//*************************************************************************
-		// ******** code the SL process below *************************************
+		// ******** code for SL process below *************************************
 		//**** example of data sent by driver SL220.00#  **************************
 		//*************************************************************************
 		//
@@ -271,8 +273,8 @@ void loop()
 	if (SlewStatus)                    // if the slew status is true, run the stepper and check for decel and stopping
 	{
 
-		within_twenty_degrees();             //check at start - what value is 212 going to cause
-		within_five_degrees();               //check at start - what value is 212 going to cause
+		within_twenty_degrees();             //
+		within_five_degrees();               //
 		distancechecker();                   // Check how close to the endpoint and reset flags for motor stop and initialisation of variables
 
 
@@ -294,7 +296,7 @@ void distancechecker()
 		DecelFlag = false;                              // reset this so that decel can happen again when new move commands come in
 		endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
 		stepper.setAcceleration(normalAcceleration);
-		TargetAzimuth= CurrentAzimuth +25.0;
+		TargetAzimuth= CurrentAzimuth +25.0;            // not sure about this
 		lcd.setCursor(0, 2);
 		lcd.print("Movement Stopped.   ");
 		
@@ -311,7 +313,7 @@ void within_five_degrees()
 	// which compare currentazimuth with targetazimuth
 
 	// 1 current az and target az are within 5 degrees
-	//problem below is repeated sl requests don't allow the motor to stop.
+	//
 
 	if ((abs(CurrentAzimuth - TargetAzimuth) < 5.0  ) && (endpointdone == false))
 	{
@@ -323,7 +325,7 @@ void within_five_degrees()
 		{
 		  stepper.moveTo(stepper.currentPosition() + 100);             // set the end point so deceleration can happen
 		}
-		else                                    // else clause is counterclockwise movement of stepper
+		else                                                          // else clause is counterclockwise movement of stepper
 		{
 			stepper.moveTo(stepper.currentPosition() - 100);
 		}
@@ -345,8 +347,8 @@ void within_twenty_degrees()
 	if ((abs(CurrentAzimuth - TargetAzimuth) < 20.0) && (DecelFlag == false))  // within 20 degrees of target....
 	{
 		
-		DecelFlag = true;                             // set the flag so this code is only executed once
-		stepper.setMaxSpeed(StepsPerSecond * 0.75);   // reduce speed to 0.75 x max 
+		DecelFlag = true;                                                      // set the flag so this code is only executed once
+		stepper.setMaxSpeed(StepsPerSecond * 0.75);                            // reduce speed to 0.75 x max 
 		stepper.setAcceleration(normalAcceleration * 2);
 		stepper.run();
 		
