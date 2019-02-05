@@ -34,6 +34,8 @@ float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller
 boolean Clockwise;
 boolean DecelFlag;
 int normalAcceleration;
+int lower_limit = 10;
+int upper_limit = 350;
 
 /*
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -165,7 +167,7 @@ void loop()
 			lcd.print(receivedData);
 
 
-			if ((TargetAzimuth < 10.0 ) || (TargetAzimuth >350.0))   //error trap azimuth value
+			if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
 			{
 			Emergency_Stop(TargetAzimuth, "Target Az failure   ");
 			}
@@ -243,7 +245,7 @@ void loop()
 			lcd.setCursor(13,1);
 			lcd.print(receivedData);
 
-			if ((CurrentAzimuth < 10.0 ) || (CurrentAzimuth >350.0))   //error trap azimuth value
+			if ((CurrentAzimuth < lower_limit ) || (CurrentAzimuth > upper_limit))   //error trap azimuth value
 			{
 				Emergency_Stop(CurrentAzimuth, "Current Az failure  ");
 			}
