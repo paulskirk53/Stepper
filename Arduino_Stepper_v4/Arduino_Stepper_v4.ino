@@ -161,6 +161,9 @@ void loop()
 			TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 			// if target < min or target > max need to do something to avoid collision at pulley
 
+			SlewStatus = true;
+			DecelFlag =false;
+
 			lcd.setCursor(0, 0);
 		    lcd.print("Target Az: ");
 			lcd.setCursor(13,0);
@@ -189,9 +192,9 @@ void loop()
 
 			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
-			SlewStatus = true;
+			
 			Clockwise = true;                            // used for deceleration
-			DecelFlag = false;                           // need to set this here
+			
 			
 			stepper.setCurrentPosition(15)  ;            // outside the aceel/ decel range checker
 			stepper.moveTo(300000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
@@ -212,9 +215,9 @@ void loop()
 
 			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
-			SlewStatus = true;
+			
 			Clockwise = false;                           // used for deceleration
-			DecelFlag = false;                           // need to set this here
+			
 			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
 			stepper.moveTo(-300000);                     // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
