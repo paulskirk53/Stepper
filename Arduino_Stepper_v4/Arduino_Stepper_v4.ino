@@ -331,14 +331,14 @@ void within_five_degrees()
 
 		endpointdone=true;
 
-		// new code for v4
+		
 		if (Clockwise)
 		{
-		  stepper.moveTo(stepper.currentPosition() + 1200);             // set the end point so deceleration can happen
+		  stepper.moveTo(stepper.currentPosition() + 400);             // set the end point so deceleration can happen
 		}
 		else                                                          // else clause is counterclockwise movement of stepper
 		{
-			stepper.moveTo(stepper.currentPosition() - 1200);
+			stepper.moveTo(stepper.currentPosition() - 400);
 		}
 
 	}  // end true case
