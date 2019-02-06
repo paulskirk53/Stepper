@@ -122,7 +122,7 @@ void loop()
 			Serial.println("Current Az   " + String( CurrentAzimuth));
 
 			Serial.println(" so a good sequence would be as follows IN THE ORDER RECEIVED FROM the driver....");
-			Serial.println("1 CL#      clockwise movement request");
+			Serial.println("1 CL190#   clockwise movement request with current Az from encoder");
 			Serial.println("2 SA220#   slew to azimuth request");
 			Serial.println("3 SL180#   simulates the compass routine providing 180 degrees");
 			Serial.println("4 SL201#   tests the within 20 degrees bit which should reduce speed to one third");
@@ -182,6 +182,9 @@ void loop()
 		if (receivedData.startsWith("CL", 0))            // clockwise Slew command from C# driver
 		{
 
+		receivedData.remove(0, 2);                      // strip off 1st 2 chars
+		CurrentAzimuth = receivedData.toFloat();        // store the current az for comparison with current position
+
 			// used 30000 as one full rev of dome and this should therefore cover any size slew
 
 			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
@@ -202,8 +205,10 @@ void loop()
 
 		} // end if cl
 
-		if (receivedData.startsWith("CC", 0)) //  counter clockwise Slew command from C# driver
+		if (receivedData.startsWith("CC", 0))            //  counter clockwise Slew command from C# driver
 		{
+			receivedData.remove(0, 2);                   // strip off 1st 2 chars
+			CurrentAzimuth = receivedData.toFloat();     // store the current az for comparison with current position
 
 			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
@@ -291,14 +296,15 @@ void distancechecker()
 {
 
 
-	
+	// good place to debug and see deceleration and stop by adding a breakpoint which views stepper.currentPosition()
+
 	if (abs(stepper.distanceToGo()) < 10)               // within 10 steps of target
 	{
 		SlewStatus = false;                             //used to stop the motor in main loop
 		DecelFlag = false;                              // reset this so that decel can happen again when new move commands come in
 		endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
 		stepper.setAcceleration(normalAcceleration);
-		TargetAzimuth= CurrentAzimuth +25.0;            // not sure about this
+		                                                //TargetAzimuth= CurrentAzimuth +25.0;            // not sure about this
 		lcd.setCursor(0, 2);
 		lcd.print("Movement Stopped.   ");
 		
@@ -325,11 +331,11 @@ void within_five_degrees()
 		// new code for v4
 		if (Clockwise)
 		{
-		  stepper.moveTo(stepper.currentPosition() + 100);             // set the end point so deceleration can happen
+		  stepper.moveTo(stepper.currentPosition() + 1200);             // set the end point so deceleration can happen
 		}
 		else                                                          // else clause is counterclockwise movement of stepper
 		{
-			stepper.moveTo(stepper.currentPosition() - 100);
+			stepper.moveTo(stepper.currentPosition() - 1200);
 		}
 
 	}  // end true case
