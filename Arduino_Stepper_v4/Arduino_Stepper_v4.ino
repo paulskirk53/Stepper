@@ -1,4 +1,5 @@
-// 
+// This is the T10 version
+// no more collisions at the stepper....
 // if TargetAz < min or targetaz > max need to do something to avoid collision at pulley//
 // Calculations for the stepper with the driver set to 0.25 degree steps show that 35000 (thirty five thousand)
 // steps are necessary to pull in enough cord to do a half rotation of the dome. So the figure of 30,000 set when the software
