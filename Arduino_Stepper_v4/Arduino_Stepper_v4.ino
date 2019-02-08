@@ -108,8 +108,6 @@ void loop()
 
 		receivedData = Serial.readStringUntil('#');          // read a string from PC serial port usb
 
-
-
 		if (receivedData.startsWith("TEST", 0))
 		{
 			lcd.setCursor(0, 0);
@@ -254,12 +252,13 @@ void loop()
 			lcd.setCursor(13,1);
 			lcd.print(receivedData);
 
+			/*   removed in belt drive
 			if ((CurrentAzimuth < lower_limit ) || (CurrentAzimuth > upper_limit))   //error trap azimuth value
 			{
 				Emergency_Stop(CurrentAzimuth, "Current Az failure  ");
 			}
 
-
+			*/
 
 			
 			receivedData = "";
@@ -294,7 +293,7 @@ void loop()
 	
 	
 
-} // end void
+} // end void loop
 
 void distancechecker()
 {
