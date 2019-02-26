@@ -67,9 +67,9 @@ void setup()
 
 
 	// initialise slewtoAz, currentazimuth
-	TargetAzimuth = 270.0;                    // these two need to be separated by at least 20 degrees as the initial starting condition
-	CurrentAzimuth = 180.0;                   // this is the starting position for the dome. It's not good as a park position though
-	                                          // due to rain blowing in from SW direction.
+	TargetAzimuth = 0.0;                    
+	CurrentAzimuth = 0.0;                   
+	                                          
 	
 
 	/*
