@@ -158,6 +158,7 @@ void loop()
 
       SlewStatus = true;
       DecelFlag = false;
+	  endpointdone = false;
 
       lcd.setCursor(0, 0);
       lcd.print("Target Az: ");
@@ -320,11 +321,11 @@ void within_five_degrees()
 
     if (Clockwise)
     {
-      stepper.moveTo(stepper.currentPosition() + 400);             // set the end point so deceleration can happen
+      stepper.moveTo(stepper.currentPosition() + 1000);             // set the end point so deceleration can happen
     }
     else                                                          // else clause is counterclockwise movement of stepper
     {
-      stepper.moveTo(stepper.currentPosition() - 400);
+      stepper.moveTo(stepper.currentPosition() - 1000);
     }
 
   }  // end true case
@@ -346,7 +347,7 @@ void within_twenty_degrees()
 
     DecelFlag = true;                                                      // set the flag so this code is only executed once
     stepper.setMaxSpeed(StepsPerSecond * 0.75);                            // reduce speed to 0.75 x max
-    stepper.setAcceleration(normalAcceleration * 2);
+    stepper.setAcceleration(normalAcceleration);                           // was normal acceleration * 2 change 27-2-19
     stepper.run();
 
   }
