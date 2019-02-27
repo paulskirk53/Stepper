@@ -53,8 +53,8 @@ void setup()
   // Change below to suit the stepper
   DecelFlag = false;
   SlewStatus = false;
-  StepsPerSecond = 350.0;                       // changed following empirical testing
-  normalAcceleration = 30;                       // changed following empirical testing
+  StepsPerSecond = 100.0;                       // changed following empirical testing
+  normalAcceleration = 2;                       // changed following empirical testing
   stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
   // the controller electronics is set to 0.25 degree steps, so 15 stepspersecond*0.25= 3.75 degrees of shaft movement per second
   stepper.setAcceleration(normalAcceleration);  // steps per second per second.
@@ -286,7 +286,7 @@ void distancechecker()
 {
 
 
-  // good place to debug and see deceleration and stop by adding a breakpoint which views stepper.currentPosition()
+  // good place to debug and see deceleration and stop by adding a breakpoint ON THE OPENING BRACE which views stepper.currentPosition()
 
   if (abs(stepper.distanceToGo()) < 10)             // within 10 steps of target
   {
@@ -321,11 +321,11 @@ void within_five_degrees()
 
     if (Clockwise)
     {
-      stepper.moveTo(stepper.currentPosition() + 1000);             // set the end point so deceleration can happen
+      stepper.moveTo(stepper.currentPosition() + 200);             // set the end point so deceleration can happen
     }
     else                                                          // else clause is counterclockwise movement of stepper
     {
-      stepper.moveTo(stepper.currentPosition() - 1000);
+      stepper.moveTo(stepper.currentPosition() - 200);
     }
 
   }  // end true case
@@ -347,7 +347,7 @@ void within_twenty_degrees()
 
     DecelFlag = true;                                                      // set the flag so this code is only executed once
     stepper.setMaxSpeed(StepsPerSecond * 0.75);                            // reduce speed to 0.75 x max
-    stepper.setAcceleration(normalAcceleration);                           // was normal acceleration * 2 change 27-2-19
+   stepper.setAcceleration(normalAcceleration * 2);                           // was normal acceleration * 2 change 27-2-19
     stepper.run();
 
   }
