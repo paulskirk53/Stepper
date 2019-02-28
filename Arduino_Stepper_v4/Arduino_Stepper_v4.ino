@@ -55,6 +55,9 @@ void setup()
   SlewStatus = false;
   StepsPerSecond = 100.0;                       // changed following empirical testing
   normalAcceleration = 2;                       // changed following empirical testing
+  StepsPerSecond = 360.0;                       // changed following empirical testing
+  halfspeed= StepsPerSecond/2;
+  normalAcceleration = 24;                       // changed following empirical testing
   stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
   // the controller electronics is set to 0.25 degree steps, so 15 stepspersecond*0.25= 3.75 degrees of shaft movement per second
   stepper.setAcceleration(normalAcceleration);  // steps per second per second.
@@ -322,10 +325,12 @@ void within_five_degrees()
     if (Clockwise)
     {
       stepper.moveTo(stepper.currentPosition() + 200);             // set the end point so deceleration can happen
+      stepper.moveTo(stepper.currentPosition() + 1000);             // set the end point so deceleration can happen
     }
     else                                                          // else clause is counterclockwise movement of stepper
     {
       stepper.moveTo(stepper.currentPosition() - 200);
+      stepper.moveTo(stepper.currentPosition() - 1000);
     }
 
   }  // end true case
@@ -348,6 +353,8 @@ void within_twenty_degrees()
     DecelFlag = true;                                                      // set the flag so this code is only executed once
     stepper.setMaxSpeed(StepsPerSecond * 0.75);                            // reduce speed to 0.75 x max
    stepper.setAcceleration(normalAcceleration * 2);                           // was normal acceleration * 2 change 27-2-19
+    stepper.setMaxSpeed(halfspeed);                            // reduce speed to 0.75 x max
+   //stepper.setAcceleration(normalAcceleration * 2);                           // was normal acceleration * 2 change 27-2-19
     stepper.run();
 
   }
