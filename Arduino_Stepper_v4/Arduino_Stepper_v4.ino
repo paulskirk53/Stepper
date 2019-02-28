@@ -32,6 +32,7 @@ float TargetAzimuth, CurrentAzimuth;
 boolean endpointdone;
 boolean SlewStatus;           // controls whether the stepper is stepped in the main loop
 float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
+float halfspeed;
 boolean Clockwise;
 boolean DecelFlag;
 int normalAcceleration;
@@ -53,8 +54,6 @@ void setup()
   // Change below to suit the stepper
   DecelFlag = false;
   SlewStatus = false;
-  StepsPerSecond = 100.0;                       // changed following empirical testing
-  normalAcceleration = 2;                       // changed following empirical testing
   StepsPerSecond = 360.0;                       // changed following empirical testing
   halfspeed= StepsPerSecond/2;
   normalAcceleration = 24;                       // changed following empirical testing
@@ -281,7 +280,7 @@ void loop()
     stepper.run();
   }
 
-
+  //stepper.run();    // added 27-2-19 as a tryout fr more calls to run
 
 } // end void loop
 
@@ -324,12 +323,10 @@ void within_five_degrees()
 
     if (Clockwise)
     {
-      stepper.moveTo(stepper.currentPosition() + 200);             // set the end point so deceleration can happen
       stepper.moveTo(stepper.currentPosition() + 1000);             // set the end point so deceleration can happen
     }
     else                                                          // else clause is counterclockwise movement of stepper
     {
-      stepper.moveTo(stepper.currentPosition() - 200);
       stepper.moveTo(stepper.currentPosition() - 1000);
     }
 
@@ -351,8 +348,8 @@ void within_twenty_degrees()
   {
 
     DecelFlag = true;                                                      // set the flag so this code is only executed once
-    stepper.setMaxSpeed(StepsPerSecond * 0.75);                            // reduce speed to 0.75 x max
-   stepper.setAcceleration(normalAcceleration * 2);                           // was normal acceleration * 2 change 27-2-19
+   
+
     stepper.setMaxSpeed(halfspeed);                            // reduce speed to 0.75 x max
    //stepper.setAcceleration(normalAcceleration * 2);                           // was normal acceleration * 2 change 27-2-19
     stepper.run();
