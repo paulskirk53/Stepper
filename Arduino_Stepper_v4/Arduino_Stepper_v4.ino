@@ -31,11 +31,12 @@ float TargetAzimuth, CurrentAzimuth;
 boolean endpointdone;
 boolean SlewStatus;           // controls whether the stepper is stepped in the main loop
 float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
+
 boolean Clockwise;
-boolean DecelFlag;
+
 int normalAcceleration;
-int lower_limit = 10;
-int upper_limit = 350;
+int lower_limit = 0;
+int upper_limit = 360;
 
 /*
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -50,10 +51,10 @@ void setup()
 	Serial.begin(9600);                           // start serial ports - usb with PC
 	stepper.stop();                               // set initial state as stopped
 	// Change below to suit the stepper
-	DecelFlag = false;
+	
 	SlewStatus = false;
-	StepsPerSecond = 100.0;                       // changed following empirical testing
-	normalAcceleration = 5;                       // changed following empirical testing
+	StepsPerSecond = 360.0;                       // changed following empirical testing
+	normalAcceleration = 200;                       // changed following empirical testing
 	stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
 	// the controller electronics is set to 0.25 degree steps, so 15 stepspersecond*0.25= 3.75 degrees of shaft movement per second
 	stepper.setAcceleration(normalAcceleration);  // steps per second per second.
@@ -63,13 +64,12 @@ void setup()
 	// with a 10 cm diameter drive wheel on the shaft, calculations show 20 shaft rotations
 	// are required to move the dome through approx one revolution and this works out to be 27600 steps for one dome rotation
 
-
+	
 
 	// initialise slewtoAz, currentazimuth
-	TargetAzimuth = 270.0;                    // these two need to be separated by at least 20 degrees as the initial starting condition
-	CurrentAzimuth = 180.0;                   // this is the starting position for the dome. It's not good as a park position though
-	                                          // due to rain blowing in from SW direction.
-	
+	TargetAzimuth =  0.0;                   
+	CurrentAzimuth = 0.0;                   
+	                                         
 
 	/*
 	default pos for MA860H controller switches:
@@ -162,7 +162,7 @@ void loop()
 			// if target < min or target > max need to do something to avoid collision at pulley
 
 			SlewStatus = true;
-			DecelFlag =false;
+			
 
 			lcd.setCursor(0, 0);
 		    lcd.print("Target Az: ");
@@ -189,7 +189,7 @@ void loop()
 		CurrentAzimuth = receivedData.toFloat();        // store the current az for comparison with current position
 
 			// used 30000 as one full rev of dome and this should therefore cover any size slew
-
+			stepper.setMaxSpeed(1); 
 			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
 			
@@ -197,7 +197,7 @@ void loop()
 			
 			
 			stepper.setCurrentPosition(15)  ;            // outside the aceel/ decel range checker
-			stepper.moveTo(300000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
+			stepper.moveTo(100000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
 			lcd.clear();
 			lcd.setCursor(0, 2);
@@ -219,7 +219,7 @@ void loop()
 			Clockwise = false;                           // used for deceleration
 			
 			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
-			stepper.moveTo(-300000);                     // Negative is anticlockwise pos is clockwise from the 0 position.
+			stepper.moveTo(-100000);                     // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
 			lcd.clear();
 			lcd.setCursor(0, 2);
@@ -283,15 +283,17 @@ void loop()
 	if (SlewStatus)                    // if the slew status is true, run the stepper and check for decel and stopping
 	{
 
-		within_twenty_degrees();             //
+		//within_twenty_degrees();             //
 		within_five_degrees();               //
 		distancechecker();                   // Check how close to the endpoint and reset flags for motor stop and initialisation of variables
 
+			
+			// set trace on stepper,run below : {stepper.distanceToGo()}{stepper.currentPosition()}{stepper.speed()}
+		stepper.run();   
 
-		stepper.run();
 	}
-	
-	
+
+		//stepper.run();
 
 } // end void
 
@@ -301,10 +303,11 @@ void distancechecker()
 
 	// good place to debug and see deceleration and stop by adding a breakpoint which views stepper.currentPosition()
 
-	if (abs(stepper.distanceToGo()) < 10)               // within 10 steps of target
+	if (abs(stepper.distanceToGo()) < 5)               // within 10 steps of target
 	{
+	    stepper.stop();
 		SlewStatus = false;                             //used to stop the motor in main loop
-		DecelFlag = false;                              // reset this so that decel can happen again when new move commands come in
+		
 		endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
 		stepper.setAcceleration(normalAcceleration);
 		                                                //TargetAzimuth= CurrentAzimuth +25.0;            // not sure about this
@@ -330,15 +333,15 @@ void within_five_degrees()
 	{
 
 		endpointdone=true;
-
 		
+		stepper.setAcceleration(normalAcceleration);
 		if (Clockwise)
 		{
-		  stepper.moveTo(stepper.currentPosition() + 400);             // set the end point so deceleration can happen
+		  stepper.moveTo(stepper.currentPosition() + 500);             // set the end point so deceleration can happen
 		}
 		else                                                          // else clause is counterclockwise movement of stepper
 		{
-			stepper.moveTo(stepper.currentPosition() - 400);
+			stepper.moveTo(stepper.currentPosition() - 500);
 		}
 
 	}  // end true case
@@ -348,30 +351,12 @@ void within_five_degrees()
 
 }
 
-void within_twenty_degrees()
-{
 
-	// decelerate if within 20 degrees to prevent overshoot
-	//
-
-
-	if ((abs(CurrentAzimuth - TargetAzimuth) < 20.0) && (DecelFlag == false))  // within 20 degrees of target....
-	{
-		
-		DecelFlag = true;                                                      // set the flag so this code is only executed once
-		stepper.setMaxSpeed(StepsPerSecond * 0.75);                            // reduce speed to 0.75 x max 
-		stepper.setAcceleration(normalAcceleration * 2);
-		stepper.run();
-		
-	}
-
-}
 void Emergency_Stop(double azimuth, String mess)
 {
 
 stepper.stop();
 SlewStatus = false;
-DecelFlag = false;
 endpointdone = false;
 
 lcd.clear();
