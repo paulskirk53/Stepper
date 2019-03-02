@@ -1,4 +1,7 @@
-// 
+// things to try to stop the pause - caused by sending anything# over serial monitor
+// speed up serial - THIS SEEMS  to have helped - field try necessary
+// don't use floating point - could use integer angles without loss really
+// use a teensy board instead
 // if TargetAz < min or targetaz > max need to do something to avoid collision at pulley//
 // Calculations for the stepper with the driver set to 0.25 degree steps show that 35000 (thirty five thousand)
 // steps are necessary to pull in enough cord to do a half rotation of the dome. So the figure of 30,000 set when the software
@@ -37,6 +40,9 @@ boolean Clockwise;
 int normalAcceleration;
 int lower_limit = 0;
 int upper_limit = 360;
+long pkinterval = 0;
+long pkstart = 0;
+long pkfinish = 0;
 
 /*
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -48,7 +54,7 @@ void setup()
 {
 	// put your setup code here, to run once:
 
-	Serial.begin(9600);                           // start serial ports - usb with PC
+	Serial.begin(9600) ;      //230400);                           // start serial ports - usb with PC
 	stepper.stop();                               // set initial state as stopped
 	// Change below to suit the stepper
 	
@@ -67,9 +73,9 @@ void setup()
 	
 
 	// initialise slewtoAz, currentazimuth
-	TargetAzimuth =  0.0;                   
-	CurrentAzimuth = 0.0;                   
-	                                         
+	TargetAzimuth =  0.0;
+	CurrentAzimuth = 0.0;
+	
 
 	/*
 	default pos for MA860H controller switches:
@@ -100,6 +106,7 @@ void setup()
 
 void loop()
 {
+	pkstart = millis();
 	// put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
 
 	if (Serial.available() > 0)                              // when serial data arrives capture it into a string
@@ -165,19 +172,19 @@ void loop()
 			
 
 			lcd.setCursor(0, 0);
-		    lcd.print("Target Az: ");
+			lcd.print("Target Az: ");
 			lcd.setCursor(13,0);
 			lcd.print(receivedData);
 
 
 			if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
 			{
-			Emergency_Stop(TargetAzimuth, "Target Az failure   ");
+				Emergency_Stop(TargetAzimuth, "Target Az failure   ");
 			}
 			
 
 			receivedData = "";
-				
+			
 		}
 
 
@@ -185,11 +192,11 @@ void loop()
 		if (receivedData.startsWith("CL", 0))            // clockwise Slew command from C# driver
 		{
 
-		receivedData.remove(0, 2);                      // strip off 1st 2 chars
-		CurrentAzimuth = receivedData.toFloat();        // store the current az for comparison with current position
+			receivedData.remove(0, 2);                      // strip off 1st 2 chars
+			CurrentAzimuth = receivedData.toFloat();        // store the current az for comparison with current position
 
 			// used 30000 as one full rev of dome and this should therefore cover any size slew
-			stepper.setMaxSpeed(1); 
+			stepper.setMaxSpeed(1);
 			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
 			stepper.setAcceleration(normalAcceleration);
 			
@@ -247,7 +254,7 @@ void loop()
 
 			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 
-						//PRINT TO LCD
+			//PRINT TO LCD
 			lcd.setCursor(0, 1);
 			lcd.print("Current Az: ");
 			lcd.setCursor(13,1);
@@ -283,40 +290,43 @@ void loop()
 	if (SlewStatus)                    // if the slew status is true, run the stepper and check for decel and stopping
 	{
 
-		//within_twenty_degrees();             //
-		within_five_degrees();               //
-		distancechecker();                   // Check how close to the endpoint and reset flags for motor stop and initialisation of variables
+		
+		
+		within_five_degrees();                  
 
+		 // Check how close to the endpoint and reset flags for motor stop and initialisation of variables
+
+		//new  - used to be a routine called distancechecker, but for some reason unknown after investigation, it added 30ms to void loop
+		//so I removed the call and replaced it with the code.
+
+		if (stepper.distanceToGo() < 5)                     // within 5 steps of target
+		{
+			stepper.stop();
+			SlewStatus = false;                             // used to stop the motor in main loop
 			
-			// set trace on stepper,run below : {stepper.distanceToGo()}{stepper.currentPosition()}{stepper.speed()}
-		stepper.run();   
+			endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
+			
+			lcd.setCursor(0, 2);
+			lcd.print("Movement Stopped.   ");
+			
+		}
 
+
+		//end new
+						
+
+		pkfinish= millis()+10;
+		pkinterval= pkfinish - pkstart;
+
+		// set trace on stepper,run below : {stepper.distanceToGo()}{stepper.currentPosition()}{stepper.speed()}
+
+		stepper.run();
+	
 	}
 
-		//stepper.run();
+	//stepper.run();
 
 } // end void
-
-void distancechecker()
-{
-
-
-	// good place to debug and see deceleration and stop by adding a breakpoint which views stepper.currentPosition()
-
-	if (abs(stepper.distanceToGo()) < 5)               // within 10 steps of target
-	{
-	    stepper.stop();
-		SlewStatus = false;                             //used to stop the motor in main loop
-		
-		endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
-		stepper.setAcceleration(normalAcceleration);
-		                                                //TargetAzimuth= CurrentAzimuth +25.0;            // not sure about this
-		lcd.setCursor(0, 2);
-		lcd.print("Movement Stopped.   ");
-		
-	}
-
-}
 
 
 
@@ -334,14 +344,14 @@ void within_five_degrees()
 
 		endpointdone=true;
 		
-		stepper.setAcceleration(normalAcceleration);
+		stepper.setAcceleration(normalAcceleration);                   // change acceleration here if we want a different rate of deceleration
 		if (Clockwise)
 		{
-		  stepper.moveTo(stepper.currentPosition() + 500);             // set the end point so deceleration can happen
+			stepper.moveTo(stepper.currentPosition() + 360);           // set the end point so deceleration can happen - 360 matches the maxspeed
 		}
-		else                                                          // else clause is counterclockwise movement of stepper
+		else                                                          //  else clause is counterclockwise movement of stepper
 		{
-			stepper.moveTo(stepper.currentPosition() - 500);
+			stepper.moveTo(stepper.currentPosition() - 360);
 		}
 
 	}  // end true case
@@ -355,17 +365,17 @@ void within_five_degrees()
 void Emergency_Stop(double azimuth, String mess)
 {
 
-stepper.stop();
-SlewStatus = false;
-endpointdone = false;
+	stepper.stop();
+	SlewStatus = false;
+	endpointdone = false;
 
-lcd.clear();
-lcd.setCursor(0, 0);
-lcd.print("Range error -Stopped");
+	lcd.clear();
+	lcd.setCursor(0, 0);
+	lcd.print("Range error -Stopped");
 
-lcd.setCursor(0, 1);
-lcd.print(mess);
+	lcd.setCursor(0, 1);
+	lcd.print(mess);
 
-lcd.setCursor(0, 2);
-lcd.print(azimuth);
+	lcd.setCursor(0, 2);
+	lcd.print(azimuth);
 }
