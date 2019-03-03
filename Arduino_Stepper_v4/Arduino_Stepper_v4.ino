@@ -54,13 +54,13 @@ void setup()
 {
 	// put your setup code here, to run once:
 
-	Serial.begin(9600) ;      //230400);                           // start serial ports - usb with PC
+	Serial.begin(115200) ;      //230400);                           // start serial ports - usb with PC
 	stepper.stop();                               // set initial state as stopped
 	// Change below to suit the stepper
 	
 	SlewStatus = false;
-	StepsPerSecond = 360.0;                       // changed following empirical testing
-	normalAcceleration = 200;                       // changed following empirical testing
+	StepsPerSecond = 500.0;                       // changed following empirical testing
+	normalAcceleration = 50;                       // changed following empirical testing
 	stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
 	// the controller electronics is set to 0.25 degree steps, so 15 stepspersecond*0.25= 3.75 degrees of shaft movement per second
 	stepper.setAcceleration(normalAcceleration);  // steps per second per second.
@@ -326,7 +326,7 @@ void loop()
 
 	//stepper.run();
 
-} // end void
+} // end void Loop
 
 
 
@@ -344,14 +344,14 @@ void within_five_degrees()
 
 		endpointdone=true;
 		
-		stepper.setAcceleration(normalAcceleration);                   // change acceleration here if we want a different rate of deceleration
+		stepper.setAcceleration(normalAcceleration*2);                   // change acceleration here if we want a different rate of deceleration
 		if (Clockwise)
 		{
-			stepper.moveTo(stepper.currentPosition() + 360);           // set the end point so deceleration can happen - 360 matches the maxspeed
+			stepper.moveTo(stepper.currentPosition() + 2000);           // set the end point so deceleration can happen - 360 matches the maxspeed
 		}
 		else                                                          //  else clause is counterclockwise movement of stepper
 		{
-			stepper.moveTo(stepper.currentPosition() - 360);
+			stepper.moveTo(stepper.currentPosition() - 2000);
 		}
 
 	}  // end true case

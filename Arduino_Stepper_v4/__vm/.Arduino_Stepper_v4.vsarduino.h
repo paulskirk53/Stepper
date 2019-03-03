@@ -9,7 +9,6 @@
 */
 
 #define __AVR_ATmega2560__
-#define _VMDEBUG 1
 #define ARDUINO 10808
 #define ARDUINO_MAIN
 #define F_CPU 16000000L
@@ -20,9 +19,7 @@
 #define ARDUINO_ARCH_AVR
 //
 //
-void distancechecker();
 void within_five_degrees();
-void within_twenty_degrees();
 void Emergency_Stop(double azimuth, String mess);
 
 #include "pins_arduino.h" 
