@@ -315,7 +315,7 @@ void loop()
 		//end new
 						
 
-		pkfinish= millis()+10;
+		pkfinish= millis();
 		pkinterval= pkfinish - pkstart;
 
 		// set trace on stepper,run below : {stepper.distanceToGo()}{stepper.currentPosition()}{stepper.speed()}
