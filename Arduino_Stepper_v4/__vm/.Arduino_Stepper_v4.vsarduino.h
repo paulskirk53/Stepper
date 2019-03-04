@@ -21,6 +21,7 @@
 //
 void within_five_degrees();
 void Emergency_Stop(double azimuth, String mess);
+void lcdprint(int col, int row, String mess);
 
 #include "pins_arduino.h" 
 #include "arduino.h"

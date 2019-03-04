@@ -89,7 +89,7 @@ void setup()
 	*/
 
 	lcd.begin(20, 4);                      // 20 columns x 4 rows
-	
+	lcd.clear();
 
 	endpointdone = false;                  // to facilitate one time execution of the endpoint setting when within 5 degrees of target
 
@@ -122,8 +122,6 @@ void loop()
 			lcd.print("Test Received");
 			delay(1000);
 			lcd.clear();
-			delay(1000);
-			lcd.print("Test again");
 			Serial.println("Communications established, received  " + receivedData);
 			Serial.println("Target Az   " +  String( TargetAzimuth));
 			Serial.println("Current Az   " + String( CurrentAzimuth));
@@ -145,7 +143,7 @@ void loop()
 
 		if (receivedData.startsWith("ES", 0))               // Emergency stop requested from C# driver
 		{
-
+		    lcd.clear();
 			Emergency_Stop(TargetAzimuth, "Received ES");
 		}                                                   // end Emergency Stop else clause
 
@@ -171,10 +169,8 @@ void loop()
 			SlewStatus = true;
 			
 
-			lcd.setCursor(0, 0);
-			lcd.print("Target Az: ");
-			lcd.setCursor(13,0);
-			lcd.print(receivedData);
+			lcdprint(0, 0,"Azimuth request");
+			lcdprint(16,0,receivedData);
 
 
 			if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
@@ -206,9 +202,7 @@ void loop()
 			stepper.setCurrentPosition(15)  ;            // outside the aceel/ decel range checker
 			stepper.moveTo(100000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
-			lcd.clear();
-			lcd.setCursor(0, 2);
-			lcd.print("Moving Clockwise");
+			lcdprint(0, 2,"Clockwise direction");
 			
 			receivedData = "";
 
@@ -228,9 +222,8 @@ void loop()
 			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
 			stepper.moveTo(-100000);                     // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
-			lcd.clear();
-			lcd.setCursor(0, 2);
-			lcd.print("Moving Anticlockwise");
+			
+			lcdprint(0, 2,"Anticlockwise Dir");
 			
 			receivedData = "";
 			//write the direction to the LCD screen
@@ -255,10 +248,8 @@ void loop()
 			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 
 			//PRINT TO LCD
-			lcd.setCursor(0, 1);
-			lcd.print("Current Az: ");
-			lcd.setCursor(13,1);
-			lcd.print(receivedData);
+			lcdprint(0, 1,"Current Azimuth ");
+			lcdprint(16,1,receivedData);
 
 			if ((CurrentAzimuth < lower_limit ) || (CurrentAzimuth > upper_limit))   //error trap azimuth value
 			{
@@ -299,16 +290,15 @@ void loop()
 		//new  - used to be a routine called distancechecker, but for some reason unknown after investigation, it added 30ms to void loop
 		//so I removed the call and replaced it with the code.
 
-		if (stepper.distanceToGo() < 5)                     // within 5 steps of target
+		if (abs(stepper.distanceToGo()) < 5)                     // within 5 steps of target
 		{
 			stepper.stop();
 			SlewStatus = false;                             // used to stop the motor in main loop
 			
 			endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
 			
-			lcd.setCursor(0, 2);
-			lcd.print("Movement Stopped.   ");
-			
+			lcdprint(0, 2,"Movement Stopped.   ");
+			lcdprint(0, 4,"Target achieved.    ");
 		}
 
 
@@ -341,7 +331,7 @@ void within_five_degrees()
 
 	if ((abs(CurrentAzimuth - TargetAzimuth) < 5.0  ) && (endpointdone == false))
 	{
-
+	    lcdprint(0,4,"Slowing to target");
 		endpointdone=true;
 		
 		stepper.setAcceleration(normalAcceleration*2);                   // change acceleration here if we want a different rate of deceleration
@@ -369,13 +359,15 @@ void Emergency_Stop(double azimuth, String mess)
 	SlewStatus = false;
 	endpointdone = false;
 
-	lcd.clear();
-	lcd.setCursor(0, 0);
-	lcd.print("Range error -Stopped");
-
-	lcd.setCursor(0, 1);
+	lcdprint(0,0,"Stopped");
+	lcdprint(0, 1,mess);
+	
+	
+}
+void lcdprint(int col, int row, String mess)
+{
+	//lcd.clear();
+	lcd.setCursor(col, row);
 	lcd.print(mess);
 
-	lcd.setCursor(0, 2);
-	lcd.print(azimuth);
 }
