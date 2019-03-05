@@ -169,8 +169,8 @@ void loop()
 			SlewStatus = true;
 			
 
-			lcdprint(0, 0,"Azimuth request");
-			lcdprint(16,0,receivedData);
+			lcdprint(0, 0,"Az requested");
+			lcdprint(13,0,receivedData);
 
 
 			if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
@@ -248,8 +248,8 @@ void loop()
 			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 
 			//PRINT TO LCD
-			lcdprint(0, 1,"Current Azimuth ");
-			lcdprint(16,1,receivedData);
+			lcdprint(0, 1,"Current Az ");
+			lcdprint(13,1,receivedData);
 
 			if ((CurrentAzimuth < lower_limit ) || (CurrentAzimuth > upper_limit))   //error trap azimuth value
 			{
