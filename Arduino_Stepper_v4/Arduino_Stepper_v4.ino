@@ -171,6 +171,7 @@ void loop()
 
 			lcdprint(0, 0,"Az requested");
 			lcdprint(13,0,receivedData);
+			lcdprint(0,4, "                    ");
 
 
 			if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
