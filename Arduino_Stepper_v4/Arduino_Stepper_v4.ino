@@ -44,6 +44,8 @@ long pkinterval = 0;
 long pkstart = 0;
 long pkfinish = 0;
 
+String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
+
 /*
 --------------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------------
@@ -90,7 +92,7 @@ void setup()
 
 	lcd.begin(20, 4);                      // 20 columns x 4 rows
 	lcd.clear();
-
+	lcdprint(0,0, "MCU-stepper Ready");
 	endpointdone = false;                  // to facilitate one time execution of the endpoint setting when within 5 degrees of target
 
 
@@ -168,10 +170,10 @@ void loop()
 
 			SlewStatus = true;
 			
-
+			lcdprint(0,0,lcdblankline);
 			lcdprint(0, 0,"Az requested");
 			lcdprint(13,0,receivedData);
-			lcdprint(0,4, "                    ");
+			lcdprint(0,4, lcdblankline);
 
 
 			if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
@@ -203,6 +205,7 @@ void loop()
 			stepper.setCurrentPosition(15)  ;            // outside the aceel/ decel range checker
 			stepper.moveTo(100000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
+			lcdprint(0,2, lcdblankline);
 			lcdprint(0, 2,"Clockwise direction");
 			
 			receivedData = "";
@@ -223,7 +226,8 @@ void loop()
 			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
 			stepper.moveTo(-100000);                     // Negative is anticlockwise pos is clockwise from the 0 position.
 			stepper.run();
-			
+
+			lcdprint(0,2, lcdblankline);
 			lcdprint(0, 2,"Anticlockwise Dir");
 			
 			receivedData = "";
@@ -249,6 +253,7 @@ void loop()
 			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
 
 			//PRINT TO LCD
+			lcdprint(0, 1, lcdblankline);
 			lcdprint(0, 1,"Current Az ");
 			lcdprint(13,1,receivedData);
 
@@ -297,8 +302,9 @@ void loop()
 			SlewStatus = false;                             // used to stop the motor in main loop
 			
 			endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
-			
+			lcdprint(0, 2, lcdblankline);
 			lcdprint(0, 2,"Movement Stopped.   ");
+			lcdprint(0, 4, lcdblankline);
 			lcdprint(0, 4,"Target achieved.    ");
 		}
 
@@ -309,7 +315,7 @@ void loop()
 		pkfinish= millis();
 		pkinterval= pkfinish - pkstart;
 
-		// set trace on stepper,run below : {stepper.distanceToGo()}{stepper.currentPosition()}{stepper.speed()}
+		// set trace on stepper,run below : {stepper.distanceToGo()}{stepper.currentPosition()}{stepper.speed()}{pkinterval}{pkstart}{pkfinish}
 
 		stepper.run();
 	
@@ -332,7 +338,8 @@ void within_five_degrees()
 
 	if ((abs(CurrentAzimuth - TargetAzimuth) < 5.0  ) && (endpointdone == false))
 	{
-	    lcdprint(0,4,"Slowing to target");
+	    lcdprint(0, 4, lcdblankline);
+	    lcdprint(0, 4,"Slowing to target");
 		endpointdone=true;
 		
 		stepper.setAcceleration(normalAcceleration*2);                   // change acceleration here if we want a different rate of deceleration
@@ -360,6 +367,7 @@ void Emergency_Stop(double azimuth, String mess)
 	SlewStatus = false;
 	endpointdone = false;
 
+	lcdprint(0, 0, lcdblankline);
 	lcdprint(0,0,"Stopped");
 	lcdprint(0, 1,mess);
 	
