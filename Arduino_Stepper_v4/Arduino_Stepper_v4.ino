@@ -345,11 +345,11 @@ void within_five_degrees()
 		stepper.setAcceleration(normalAcceleration*2);                   // change acceleration here if we want a different rate of deceleration
 		if (Clockwise)
 		{
-			stepper.moveTo(stepper.currentPosition() + 2000);           // set the end point so deceleration can happen - 360 matches the maxspeed
+			stepper.moveTo(stepper.currentPosition() + 1000);           // set the end point so deceleration can happen - 360 matches the maxspeed
 		}
 		else                                                          //  else clause is counterclockwise movement of stepper
 		{
-			stepper.moveTo(stepper.currentPosition() - 2000);
+			stepper.moveTo(stepper.currentPosition() - 1000);
 		}
 
 	}  // end true case
