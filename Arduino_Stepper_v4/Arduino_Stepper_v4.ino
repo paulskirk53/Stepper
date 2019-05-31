@@ -336,7 +336,7 @@ void within_five_degrees()
 	// 1 current az and target az are within 5 degrees
 	//
 
-	if ((abs(CurrentAzimuth - TargetAzimuth) < 5.0  ) && (endpointdone == false))
+	if ((abs(CurrentAzimuth - TargetAzimuth) < 10.0  ) && (endpointdone == false))
 	{
 	    lcdprint(0, 4, lcdblankline);
 	    lcdprint(0, 4,"Slowing to target");
