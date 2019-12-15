@@ -1,11 +1,14 @@
-// things to try to stop the pause - caused by sending anything# over serial monitor
-// speed up serial - THIS SEEMS  to have helped - field try necessary
-// don't use floating point - could use integer angles without loss really
-// use a teensy board instead
-// if TargetAz < min or targetaz > max need to do something to avoid collision at pulley//
-// Calculations for the stepper with the driver set to 0.25 degree steps show that 35000 (thirty five thousand)
-// steps are necessary to pull in enough cord to do a half rotation of the dome. So the figure of 30,000 set when the software
-// was written initially had to be increased to a bigger number - it's now set at 300,000 which is way bigger than any slew would need.
+
+// This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
+//TEST#
+//ES# - emergency stop
+//SA999.99# - Slew to azimuth
+//SL# - Slew status request
+//CL# - Clockwise movement request
+//CC# - Anticlockwise movement request
+//
+//The routine drives the stepper motor to move the Dome
+
 // library for stepper
 
 #include <AccelStepper.h>
@@ -56,7 +59,7 @@ void setup()
 {
 	// put your setup code here, to run once:
 
-	Serial.begin(115200) ;      //230400);                           // start serial ports - usb with PC
+	Serial.begin(115200) ;                        // start serial ports - usb with PC
 	stepper.stop();                               // set initial state as stopped
 	// Change below to suit the stepper
 	
