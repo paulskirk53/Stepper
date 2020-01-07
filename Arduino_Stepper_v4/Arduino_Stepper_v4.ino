@@ -1,13 +1,12 @@
-
+// check the arrivedatdestination moveto values as they may need empirical change on testing
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
 //TEST#
 //ES# - emergency stop
 //SA999.99# - Slew to azimuth
 //SL# - Slew status request
-//CL# - Clockwise movement request
-//CC# - Anticlockwise movement request
-//
-//The routine drives the stepper motor to move the Dome
+
+// The routine drives the stepper motor to move the Dome
+// It acquires the current azimuth via hardware serial3 from the encoder
 
 // library for stepper
 
@@ -48,338 +47,314 @@ long pkstart = 0;
 long pkfinish = 0;
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
+String QueryDir;
 
 /*
---------------------------------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------------------------------------------------
 */
 
 
 void setup()
 {
-	// put your setup code here, to run once:
+  // put your setup code here, to run once:
 
-	Serial.begin(115200) ;                        // start serial ports - usb with PC
-	stepper.stop();                               // set initial state as stopped
-	// Change below to suit the stepper
-	
-	SlewStatus = false;
-	StepsPerSecond = 500.0;                       // changed following empirical testing
-	normalAcceleration = 50;                       // changed following empirical testing
-	stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
-	// the controller electronics is set to 0.25 degree steps, so 15 stepspersecond*0.25= 3.75 degrees of shaft movement per second
-	stepper.setAcceleration(normalAcceleration);  // steps per second per second.
-	// Note V= acceleration * time, so a vlue of e.g. 1 step /s/s takes 10 secs to reach maxspeed of 10 or 15 secs to reach maxspeed 15 etc
-	//
-	// see how the speed of 15 goes empirically
-	// with a 10 cm diameter drive wheel on the shaft, calculations show 20 shaft rotations
-	// are required to move the dome through approx one revolution and this works out to be 27600 steps for one dome rotation
+  Serial.begin(115200) ;                        // start serial ports - usb with PC
+  Serial3.begin(115200);                        // start usb with encoder
+  stepper.stop();                               // set initial state as stopped
+  // Change below to suit the stepper
 
-	
+  SlewStatus = false;
+  StepsPerSecond = 500.0;                       // changed following empirical testing
+  normalAcceleration = 50;                       // changed following empirical testing
+  stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
 
-	// initialise slewtoAz, currentazimuth
-	TargetAzimuth =  0.0;
-	CurrentAzimuth = 0.0;
-	
+  stepper.setAcceleration(normalAcceleration);  // steps per second per second.
+  // Note V= acceleration * time, so a vlue of e.g. 1 step /s/s takes 10 secs to reach maxspeed of 10 or 15 secs to reach maxspeed 15 etc
+  //
+  // see how the speed of 15 goes empirically
+  // with a 10 cm diameter drive wheel on the shaft, calculations show 20 shaft rotations
+  // are required to move the dome through approx one revolution and this works out to be 27600 steps for one dome rotation
 
-	/*
-	default pos for MA860H controller switches:
-	5     6    7    8
-	on   off  off  off = smallest step size
 
-	my setting:
-	5     6    7    8
-	on   on  off  on =  step angle ~ 0.25 degree
+  // initialise
+  TargetAzimuth =  0.0;
+  CurrentAzimuth = 0.0;
 
-	*/
 
-	lcd.begin(20, 4);                      // 20 columns x 4 rows
-	lcd.clear();
-	lcdprint(0,0, "MCU-stepper Ready");
-	endpointdone = false;                  // to facilitate one time execution of the endpoint setting when within 5 degrees of target
+
+  lcd.begin(20, 4);                      // 20 columns x 4 rows
+  lcd.clear();
+  lcdprint(0, 0, "MCU-stepper Ready");
+
 
 
 } // end setup
 
 /*
-\\\\\\\\\\\\\\\\/////////////////////////\\\\\\\\\\\\\\\\\\\\\///////////////
-////////////////\\\\\\\\\\\\\\\\\\\\\\\\\/////////////////////\\\\\\\\\\\\\\\
-////////////////\\\\\\\\\\\\\\\\\\\\\\\\\/////////////////////\\\\\\\\\\\\\\\
-\\\\\\\\\\\\\\\\/////////////////////////\\\\\\\\\\\\\\\\\\\\\///////////////
+  \\\\\\\\\\\\\\\\/////////////////////////\\\\\\\\\\\\\\\\\\\\\///////////////
+  ////////////////\\\\\\\\\\\\\\\\\\\\\\\\\/////////////////////\\\\\\\\\\\\\\\
+  ////////////////\\\\\\\\\\\\\\\\\\\\\\\\\/////////////////////\\\\\\\\\\\\\\\
+  \\\\\\\\\\\\\\\\/////////////////////////\\\\\\\\\\\\\\\\\\\\\///////////////
 */
 
 
 void loop()
 {
-	pkstart = millis();
-	// put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
+  pkstart = millis();
+  // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
 
-	if (Serial.available() > 0)                              // when serial data arrives capture it into a string
-	{
+  if (Serial.available() > 0)                              // when serial data arrives capture it into a string
+  {
 
-		receivedData = Serial.readStringUntil('#');          // read a string from PC serial port usb
-
-
-
-		if (receivedData.startsWith("TEST", 0))
-		{
-			lcd.setCursor(0, 0);
-			lcd.print("Test Received");
-			delay(1000);
-			lcd.clear();
-			Serial.println("Communications established, received  " + receivedData);
-			Serial.println("Target Az   " +  String( TargetAzimuth));
-			Serial.println("Current Az   " + String( CurrentAzimuth));
-
-			Serial.println(" so a good sequence would be as follows IN THE ORDER RECEIVED FROM the driver....");
-			Serial.println("1 CL190#   clockwise movement request with current Az from encoder");
-			Serial.println("2 SA220#   slew to azimuth request");
-			Serial.println("3 SL180#   simulates the compass routine providing 180 degrees");
-			Serial.println("4 SL201#   tests the within 20 degrees bit which should reduce speed to one third");
-			Serial.println("5 SL218#   should stop when this is entered because we are within the coded 5 degree window which defines target reached.");
-			Serial.println(" ");
-			Serial.println("emergency stop is ES#");
-
-			// emergency stop is ES#
-			//
-
-		}
+    receivedData = Serial.readStringUntil('#');          // read a string from PC serial port usb
 
 
-		if (receivedData.startsWith("ES", 0))               // Emergency stop requested from C# driver
-		{
-		    lcd.clear();
-			Emergency_Stop(TargetAzimuth, "Received ES");
-		}                                                   // end Emergency Stop else clause
+    if (receivedData.startsWith("TEST", 0))
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("Test Received");
+      delay(1000);
+      lcd.clear();
+      Serial.println("Communications established, received  " + receivedData);
+      Serial.println("Target Az  is " +  String( TargetAzimuth));
+      Serial.println("Current Az is " + String( CurrentAzimuth));
+
+      Serial.println(" so a good sequence would be as follows IN THE ORDER RECEIVED FROM the driver....");
+      Serial.println("1 SL#      to check slewing");
+      Serial.println("2 SA220#   slew to azimuth request");
+      Serial.println("3 SL#      to check slewing");
+      Serial.println("4 SL#      to check slewing");
+      Serial.println("5 SL#      to check slewing etc etc");
+      Serial.println(" ");
+      Serial.println("emergency stop is ES#");
+
+      // emergency stop is ES#
+      //
+      receivedData = "";
+    }
 
 
-
-		//*************************************************************************
-		//******** code for SA process below **************************************
-		//**** example of data sent by driver SA220.00#  **************************
-		//**** SA command is followed in the driver by sending CL# or CC# *********
-		//*************************************************************************
-
-		if (receivedData.startsWith("SA", 0)) // SlewToAzimuth command from C# driver
-		{
-			
-			
-			// strip off 1st 2 chars
-			receivedData.remove(0, 2);
-
-
-			TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
-			// if target < min or target > max need to do something to avoid collision at pulley
-
-			SlewStatus = true;
-			
-			lcdprint(0,0,lcdblankline);
-			lcdprint(0, 0,"Az requested");
-			lcdprint(13,0,receivedData);
-			lcdprint(0,4, lcdblankline);
-
-
-			if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
-			{
-				Emergency_Stop(TargetAzimuth, "Target Az failure   ");
-			}
-			
-
-			receivedData = "";
-			
-		}
+    if (receivedData.startsWith("ES", 0))               // Emergency stop requested from C# driver
+    {
+      lcd.clear();
+      Emergency_Stop(0.00, "Received ES");
+      receivedData = "";
+    }                                                   // end Emergency Stop else clause
 
 
 
-		if (receivedData.startsWith("CL", 0))            // clockwise Slew command from C# driver
-		{
+    //*************************************************************************
+    //******** code for SA process below **************************************
+    //**** example of data sent by driver SA220.00#  **************************
+    //*************************************************************************
+    //*************************************************************************
 
-			receivedData.remove(0, 2);                      // strip off 1st 2 chars
-			CurrentAzimuth = receivedData.toFloat();        // store the current az for comparison with current position
-
-			// used 30000 as one full rev of dome and this should therefore cover any size slew
-			stepper.setMaxSpeed(1);
-			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
-			stepper.setAcceleration(normalAcceleration);
-			
-			Clockwise = true;                            // used for deceleration
-			
-			
-			stepper.setCurrentPosition(15)  ;            // outside the aceel/ decel range checker
-			stepper.moveTo(100000);                      // Negative is anticlockwise pos is clockwise from the 0 position.
-			stepper.run();
-			lcdprint(0,2, lcdblankline);
-			lcdprint(0, 2,"Clockwise direction");
-			
-			receivedData = "";
+    if (receivedData.indexOf("SA", 0) > -1) //
+    {
+      // strip off 1st 2 chars
+      receivedData.remove(0, 2);
 
 
-		} // end if cl
-
-		if (receivedData.startsWith("CC", 0))            //  counter clockwise Slew command from C# driver
-		{
-			receivedData.remove(0, 2);                   // strip off 1st 2 chars
-			CurrentAzimuth = receivedData.toFloat();     // store the current az for comparison with current position
-
-			stepper.setMaxSpeed(StepsPerSecond);         // must call this following moveto
-			stepper.setAcceleration(normalAcceleration);
-			
-			Clockwise = false;                           // used for deceleration
-			
-			stepper.setCurrentPosition(-15)    ;         // outside the aceel/ decel range checker
-			stepper.moveTo(-100000);                     // Negative is anticlockwise pos is clockwise from the 0 position.
-			stepper.run();
-
-			lcdprint(0,2, lcdblankline);
-			lcdprint(0, 2,"Anticlockwise Dir");
-			
-			receivedData = "";
-			//write the direction to the LCD screen
-
-		} // end if cc
+      TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
+      // if target < min or target > max need to do something to avoid collision at pulley
 
 
+      if (SlewStatus == false)             // only do this if not slewing
+      {
 
-		//*************************************************************************
-		// ******** code for SL process below *************************************
-		//**** example of data sent by driver SL220.00#  **************************
-		//*************************************************************************
-		//
+        stepper.setAcceleration(normalAcceleration);      // set the acceleration
 
-		if (receivedData.startsWith("SL", 0)) // Receive the Current AZ via driver from Compass
-		{
+        WhichDirection(QueryDir);                         // work out which direction of travle is optimum
 
-			// strip off 1st 2 chars
-			receivedData.remove(0, 2);
+        if (QueryDir == "clockwise")
+        {
 
+          stepper.moveTo(100000);                         // positive number means clockwise in accelstepper library
+          SlewStatus = true;
+        }
 
-			CurrentAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
+        if (QueryDir == "anticlockwise")
+        {
+          stepper.moveTo(-100000);                      // negative is anticlockwise in accelstepper library
+          SlewStatus = true;
+        }
 
-			//PRINT TO LCD
-			lcdprint(0, 1, lcdblankline);
-			lcdprint(0, 1,"Current Az ");
-			lcdprint(13,1,receivedData);
+        lcdprint(0,  0, lcdblankline);
+        lcdprint(0,  0, "Goto requested");
+        lcdprint(15, 0, receivedData);
+        lcdprint(0,  2, lcdblankline);
+        lcdprint(0,  2, String(SlewStatus));
 
-			if ((CurrentAzimuth < lower_limit ) || (CurrentAzimuth > upper_limit))   //error trap azimuth value
-			{
-				Emergency_Stop(CurrentAzimuth, "Current Az failure  ");
-			}
+        lcdprint(0, 3, lcdblankline);
+        lcdprint(0, 3,  QueryDir);
 
-
-
-			
-			receivedData = "";
-			
-			if (SlewStatus)
-			{
-				Serial.print("Moving");
-				Serial.println("#");
-			}
-			else
-			{
-				Serial.print("Notmoving");               // sent to serial USB and picked up by the driver
-				Serial.println("#");
-				endpointdone=false;                      //reset the flag which controls one time execution of the 5 degree window
-			}
-			
-		}  // end SL case
+        //  if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
+        //  {
+        //    Emergency_Stop(TargetAzimuth, "Target Az failure   ");
+        //  }
 
 
-	}  // end software serial
+        receivedData = "";
 
-	if (SlewStatus)                    // if the slew status is true, run the stepper and check for decel and stopping
-	{
+      }
 
-		
-		
-		within_five_degrees();                  
+    }
 
-		 // Check how close to the endpoint and reset flags for motor stop and initialisation of variables
+    //*************************************************************************
+    // ******** code for SL process below *************************************
+    //**** example of data sent by driver SL220.00#  **************************
+    //*************************************************************************
+    //
 
-		//new  - used to be a routine called distancechecker, but for some reason unknown after investigation, it added 30ms to void loop
-		//so I removed the call and replaced it with the code.
+    if (receivedData.indexOf("SL", 0) > -1) //
 
-		if (abs(stepper.distanceToGo()) < 5)                     // within 5 steps of target
-		{
-			stepper.stop();
-			SlewStatus = false;                             // used to stop the motor in main loop
-			
-			endpointdone = false;                           // RESET this so that the 5 degree window for stopping is enabled
-			lcdprint(0, 2, lcdblankline);
-			lcdprint(0, 2,"Movement Stopped.   ");
-			lcdprint(0, 4, lcdblankline);
-			lcdprint(0, 4,"Target achieved.    ");
-		}
+    {
+      //send true or false
+
+      if (SlewStatus)
+      {
+        Serial.print("Moving");
+        Serial.println("#");
+      }
+      else
+      {
+        Serial.print("Notmoving");               // sent to serial USB and picked up by the driver
+        Serial.println("#");
+
+      }
+      receivedData = "";
+      
+    }  // end SL case
 
 
-		//end new
-						
+  }  // end software serial
 
-		pkfinish= millis();
-		pkinterval= pkfinish - pkstart;
+  ArrivedAtDestinationCheck();
 
-		// set trace on stepper,run below : {stepper.distanceToGo()}{stepper.currentPosition()}{stepper.speed()}{pkinterval}{pkstart}{pkfinish}
+  if (SlewStatus)                    // if the slew status is true, run the stepper and check for decel and stopping
+  {
 
-		stepper.run();
-	
-	}
+    stepper.run();
 
-	//stepper.run();
+  }
+
 
 } // end void Loop
-
-
-
-void within_five_degrees()
-{
-
-	// now code cases 1 and 2 from arduino stepper process in spreadsheet
-	// which compare currentazimuth with targetazimuth
-
-	// 1 current az and target az are within 5 degrees
-	//
-
-	if ((abs(CurrentAzimuth - TargetAzimuth) < 10.0  ) && (endpointdone == false))
-	{
-	    lcdprint(0, 4, lcdblankline);
-	    lcdprint(0, 4,"Slowing to target");
-		endpointdone=true;
-		
-		stepper.setAcceleration(normalAcceleration*2);                   // change acceleration here if we want a different rate of deceleration
-		if (Clockwise)
-		{
-			stepper.moveTo(stepper.currentPosition() + 1000);           // set the end point so deceleration can happen - 360 matches the maxspeed
-		}
-		else                                                          //  else clause is counterclockwise movement of stepper
-		{
-			stepper.moveTo(stepper.currentPosition() - 1000);
-		}
-
-	}  // end true case
-
-	// if the two angles are not within 5 deg then the motor is still going
-
-
-}
 
 
 void Emergency_Stop(double azimuth, String mess)
 {
 
-	stepper.stop();
-	SlewStatus = false;
-	endpointdone = false;
+  stepper.stop();
+  SlewStatus = false;
 
-	lcdprint(0, 0, lcdblankline);
-	lcdprint(0,0,"Stopped");
-	lcdprint(0, 1,mess);
-	
-	
+
+  lcdprint(0, 0, lcdblankline);
+  lcdprint(0, 0, "Stopped");
+  lcdprint(0, 1, mess);
+
+
 }
+
 void lcdprint(int col, int row, String mess)
 {
-	//lcd.clear();
-	lcd.setCursor(col, row);
-	lcd.print(mess);
+  //lcd.clear();
+  lcd.setCursor(col, row);
+  lcd.print(mess);
+
+}
+
+void WhichDirection(String dir)
+{
+  // put in the code from the driver which does modulo stuff
+  long difference = 0;
+  long part1 = 0;
+  long part2 = 0;
+  long part3 = 0;
+  long DiffMod = 0;
+
+
+  getCurrentAzimuth(CurrentAzimuth);
+
+  difference = (int)(CurrentAzimuth - TargetAzimuth );
+  part1 = (int)(difference / 360);
+  if (difference < 0)
+  {
+    part1 = -1;
+  }
+  part2 = part1 * 360;
+  part3 = difference - part2;
+  DiffMod = part3;
+
+  if (DiffMod >= 180)
+  {
+    dir = "clockwise"; // the clockwise case
+  }
+  else
+  {
+    dir = "anticlockwise";  //counerclockwise}
+  }
+
+
+  // code below optimises movement to take the shortest distance
+
+}
+
+void ArrivedAtDestinationCheck()
+{
+
+  getCurrentAzimuth(CurrentAzimuth);
+
+  if (abs(CurrentAzimuth - TargetAzimuth) < 5)                     // within 5 degrees of target
+  {
+
+    if (QueryDir == "clockwise")
+    {
+      // set the moveto position to allow 100 steps more for deceleration  + for clock - for anticclock
+
+      stepper.moveTo(stepper.currentPosition() + 150);
+
+    }
+
+    if (QueryDir == "anticlockwise")
+    {
+
+      stepper.moveTo(stepper.currentPosition() - 150);             // check this by printing out current position is it negative?
+
+    }
+
+
+
+    SlewStatus = false;                             // used to stop the motor in main loop
+
+
+    lcdprint(0, 2, lcdblankline);
+    lcdprint(0, 2, "Movement Stopped.   ");
+    lcdprint(0, 4, lcdblankline);
+    lcdprint(0, 4, "Target achieved.    ");
+  }
+
+}
+
+void getCurrentAzimuth(double az)
+{
+
+  pkstart = millis();           //use this eventually to control a timeout for serial tx / rx
+
+  Serial3.print("AZ");          //this is sent to the encoder which is coded to return the azimuth of the dome
+
+  while (!(Serial3.available() > 0))
+  {
+    //wait
+  }
+  if (Serial3.available() > 0)                              // when serial data arrives capture it into a string
+  {
+
+    String receipt = Serial3.readStringUntil('#');          // read a string from PC serial port usb the # is not included by arduino
+    az = receipt.toDouble();                               // convert
+  }
+
+  //convert receipt to double as az and return it
 
 }
