@@ -33,7 +33,7 @@ AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 String receivedData;
 float TargetAzimuth, CurrentAzimuth;
 
-boolean endpointdone;
+boolean do_once;
 boolean SlewStatus;           // controls whether the stepper is stepped in the main loop
 float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
@@ -80,14 +80,14 @@ void setup()
   // initialise
   TargetAzimuth =  0.0;
   CurrentAzimuth = 0.0;
-
+  do_once = true;      // used to set deceleration towards target azimuth
 
 
   lcd.begin(20, 4);                      // 20 columns x 4 rows
   lcd.clear();
   lcdprint(0, 0, "MCU-stepper Ready");
 
-
+ 
 
 } // end setup
 
@@ -198,7 +198,7 @@ void loop()
         receivedData = "";
 
       }
-
+	  
     }
 
     //*************************************************************************
@@ -297,62 +297,76 @@ void WhichDirection(String dir)
   }
 
 
-  // code below optimises movement to take the shortest distance
+  // code above optimises movement to take the shortest distance
 
 }
 
 void ArrivedAtDestinationCheck()
 {
 
-  getCurrentAzimuth(CurrentAzimuth);
-
-  if (abs(CurrentAzimuth - TargetAzimuth) < 5)                     // within 5 degrees of target
+if (do_once)
   {
+    
+    getCurrentAzimuth(CurrentAzimuth);
 
-    if (QueryDir == "clockwise")
+    if (abs(CurrentAzimuth - TargetAzimuth) < 5)                     // within 5 degrees of target
     {
-      // set the moveto position to allow 100 steps more for deceleration  + for clock - for anticclock
+	  do_once = false;
+      if (QueryDir == "clockwise")
+      {
+        // set the moveto position to allow 100 steps more for deceleration  +ve for clockwise -ve for anticclock
 
-      stepper.moveTo(stepper.currentPosition() + 150);
+        stepper.moveTo(stepper.currentPosition() + 150);
 
+      }
+
+      if (QueryDir == "anticlockwise")
+      {
+
+        stepper.moveTo(stepper.currentPosition() - 150);             // check this by printing out current position is it negative?
+
+      }
     }
 
-    if (QueryDir == "anticlockwise")
-    {
+  }
 
-      stepper.moveTo(stepper.currentPosition() - 150);             // check this by printing out current position is it negative?
-
-    }
-
-
-
-    SlewStatus = false;                             // used to stop the motor in main loop
+  if (stepper.distanceToGo() < 20)
+  {
+     SlewStatus = false;                             // used to stop the motor in main loop
+  }
+ 
 
 
     lcdprint(0, 2, lcdblankline);
     lcdprint(0, 2, "Movement Stopped.   ");
     lcdprint(0, 4, lcdblankline);
     lcdprint(0, 4, "Target achieved.    ");
-  }
+  
 
 }
 
 void getCurrentAzimuth(double az)
 {
-
+long interval = 0;
   pkstart = millis();           //use this eventually to control a timeout for serial tx / rx
 
   Serial3.print("AZ");          //this is sent to the encoder which is coded to return the azimuth of the dome
 
   while (!(Serial3.available() > 0))
   {
-    //wait
+    //retry after a 2 second wait
+	interval = millis() - pkstart;
+	if (interval >2000)
+	{
+	  Serial3.print("AZ");                                  //resend if there was no response within 2 seconds
+	  pkstart = millis();
+	}
   }
-  if (Serial3.available() > 0)                              // when serial data arrives capture it into a string
+  if (Serial3.available() > 0)                            // when serial data arrives capture it into a string
   {
 
-    String receipt = Serial3.readStringUntil('#');          // read a string from PC serial port usb the # is not included by arduino
-    az = receipt.toDouble();                               // convert
+    String receipt = Serial3.readStringUntil('#');        // read a string from PC serial port usb the # is not included by arduino
+    az = receipt.toDouble();                              // convert
   }
 
   //convert receipt to double as az and return it
