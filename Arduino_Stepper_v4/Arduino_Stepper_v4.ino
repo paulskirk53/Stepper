@@ -4,7 +4,7 @@
 //ES# - emergency stop
 //SA999.99# - Slew to azimuth
 //SL# - Slew status request
-
+//
 // The routine drives the stepper motor to move the Dome
 // It acquires the current azimuth via hardware serial3 from the encoder
 
