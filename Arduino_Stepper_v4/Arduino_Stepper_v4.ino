@@ -43,8 +43,8 @@ int normalAcceleration;
 int lower_limit = 0;
 int upper_limit = 360;
 long pkinterval = 0;
-long pkstart = 0;
-long pkfinish = 0;
+long pkstart    = 0;
+long pkfinish   = 0;
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
 String QueryDir;
@@ -87,7 +87,7 @@ void setup()
   lcd.clear();
   lcdprint(0, 0, "MCU-stepper Ready");
 
- 
+
 
 } // end setup
 
@@ -104,7 +104,7 @@ void loop()
   pkstart = millis();
   // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
 
-  if (Serial.available() > 0)                              // when serial data arrives capture it into a string
+  if (Serial.available() > 0)                              // when serial data arrives from the driver on USB capture it into a string
   {
 
     receivedData = Serial.readStringUntil('#');          // read a string from PC serial port usb
@@ -198,7 +198,7 @@ void loop()
         receivedData = "";
 
       }
-	  
+
     }
 
     //*************************************************************************
@@ -224,7 +224,7 @@ void loop()
 
       }
       receivedData = "";
-      
+
     }  // end SL case
 
 
@@ -304,14 +304,14 @@ void WhichDirection(String dir)
 void ArrivedAtDestinationCheck()
 {
 
-if (do_once)
+  if (do_once)
   {
-    
+
     getCurrentAzimuth(CurrentAzimuth);
 
     if (abs(CurrentAzimuth - TargetAzimuth) < 5)                     // within 5 degrees of target
     {
-	  do_once = false;
+      do_once = false;
       if (QueryDir == "clockwise")
       {
         // set the moveto position to allow 100 steps more for deceleration  +ve for clockwise -ve for anticclock
@@ -332,43 +332,56 @@ if (do_once)
 
   if (stepper.distanceToGo() < 20)
   {
-     SlewStatus = false;                             // used to stop the motor in main loop
+    SlewStatus = false;                             // used to stop the motor in main loop
   }
- 
 
 
-    lcdprint(0, 2, lcdblankline);
-    lcdprint(0, 2, "Movement Stopped.   ");
-    lcdprint(0, 4, lcdblankline);
-    lcdprint(0, 4, "Target achieved.    ");
-  
+
+  lcdprint(0, 2, lcdblankline);
+  lcdprint(0, 2, "Movement Stopped.   ");
+  lcdprint(0, 4, lcdblankline);
+  lcdprint(0, 4, "Target achieved.    ");
+
 
 }
 
 void getCurrentAzimuth(double az)
 {
-long interval = 0;
+  long interval = 0;
   pkstart = millis();           //use this eventually to control a timeout for serial tx / rx
 
-  Serial3.print("AZ");          //this is sent to the encoder which is coded to return the azimuth of the dome
+  //test serial - not serial3 - remove this after testing
 
-  while (!(Serial3.available() > 0))
+  Serial.print ( "Sent AZ# to the encoder and got back ");    // remove after test
+
+
+  //
+
+  Serial3.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
+
+  while (  !(Serial3.available() > 0)  )
   {
     //retry after a 2 second wait
-	interval = millis() - pkstart;
-	if (interval >2000)
-	{
-	  Serial3.print("AZ");                                  //resend if there was no response within 2 seconds
-	  pkstart = millis();
-	}
+    interval = millis() - pkstart;
+    if (interval > 2000)
+    {
+      Serial3.print("AZ#");                                  //resend if there was no response within 2 seconds
+      pkstart = millis();
+    }
   }
+
+  
   if (Serial3.available() > 0)                            // when serial data arrives capture it into a string
   {
 
     String receipt = Serial3.readStringUntil('#');        // read a string from PC serial port usb the # is not included by arduino
     az = receipt.toDouble();                              // convert
+    
+    Serial.println(receipt);                             //remove this after testing as it destroye the protocol integrity
   }
 
   //convert receipt to double as az and return it
+
+
 
 }
