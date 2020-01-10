@@ -1,4 +1,4 @@
-//verion A1.2
+//verion A1.4 - change the variable in setup too
 // check the arrivedatdestination moveto values as they may need empirical change on testing
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
 //TEST#
@@ -50,7 +50,7 @@ long PKcurrentTime = 0;
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
 String QueryDir;
 String movementstate;
-String Version = "A1.1";
+String Version = "A1.4";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ void loop()
       Serial.println(" ");
       Serial.println("emergency stop is ES#");
 
-      // emergency stop is ES#
+
       //
       receivedData = "";
     }
@@ -167,7 +167,7 @@ void loop()
       TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
       TargetChanged = true;
       Serial.println();
-      Serial.print("in slewto azimuth received ");
+      Serial.print("in slewto target received ");
       Serial.println(TargetAzimuth);
 
       if (SlewStatus == false)             // only do this if not slewing
@@ -220,7 +220,7 @@ void loop()
       {
         Serial.print("Moving");
         Serial.println("#");
-        movementstate  = "Moving";               // for updating the lcdpanel
+
       }
       else
       {
@@ -235,19 +235,11 @@ void loop()
 
   }  // end software serial
 
-  //CHECK ONCE PER SECOND FOR CURRENT AZIMUTH
+  //CHECK ONCE PER two SECONDs FOR CURRENT AZIMUTH
 
   PKcurrentTime = millis();
 
   pkinterval = PKcurrentTime - pkstart ;
-
-
-  //Serial.print("curent time is ");
-  //Serial.println(PKcurrentTime);
-  //Serial.print("interval is ");
-  //Serial.println(pkinterval);
-  //delay(5000);
-
 
 
   if (pkinterval > 2000 )
@@ -255,24 +247,7 @@ void loop()
     ArrivedAtDestinationCheck();
     pkinterval = 0;
     pkstart = millis();
-    Serial.println("should be 2 secs  ");
-    // update lcd panel
-    lcdprint(0,  0, lcdblankline);
-    lcdprint(0,  1, lcdblankline);
-    lcdprint(0,  2, lcdblankline);
-    lcdprint(0,  3, lcdblankline);
-
-
-    lcdprint(0,  0, "Goto request");
-    lcdprint(15, 0, receivedData);
-
-
-    lcdprint(0,  1, "Status:" + movementstate);
-    lcdprint(7,  2, QueryDir);
-
-    lcdprint(0, 3, "Distance to go");
-
-    lcdprint(16, 3,  String(int(TargetAzimuth -  getCurrentAzimuth())));
+    //Serial.println("should be 2 secs  ");   //test only
 
   }
 
@@ -353,7 +328,7 @@ void ArrivedAtDestinationCheck()
 
   if (do_once)
   {
-    Serial.print("do once ");
+    //Serial.print("do once ");
     delay (1000);  // remove
     CurrentAzimuth =   getCurrentAzimuth();
 
@@ -378,10 +353,13 @@ void ArrivedAtDestinationCheck()
 
   }
 
-  if (stepper.distanceToGo() < 20)
+  if (    abs( stepper.distanceToGo() < 20 )    )
   {
     SlewStatus = false;                      // used to stop the motor in main loop
     movementstate  = "Not Moving";           // for updating the lcdpanel
+
+    Serial.print("Stopped now....");
+    Serial.println();
   }
   else
   {
@@ -415,7 +393,9 @@ double getCurrentAzimuth()
       az = receipt.toDouble();                              // convert
       if (  (az > 0) && (az <= 360) )
       {
-        Serial.println(receipt);                             //remove this after testing as it destroye the protocol integrity
+
+        // Serial.print("in az validation az is ");
+        //  Serial.println(receipt);                             //remove this after testing as it destroye the protocol integrity
 
         validaz = true;
 
@@ -425,4 +405,32 @@ double getCurrentAzimuth()
 
   }
   return az;
+}
+
+void UpdateThelcdPanel()
+{
+
+  // update lcd panel
+  lcdprint(0,  0, lcdblankline);
+  lcdprint(0,  1, lcdblankline);
+  lcdprint(0,  2, lcdblankline);
+  lcdprint(0,  3, lcdblankline);
+
+
+  lcdprint(0,  0, "Goto request");
+  lcdprint(15, 0, String(int(TargetAzimuth)));
+
+
+  lcdprint(0,  1, "Status:  " + movementstate);
+  lcdprint(7,  2, QueryDir);
+
+  lcdprint(0, 3, "Distance to go");
+
+  lcdprint(16, 3,  String(int(TargetAzimuth -  getCurrentAzimuth())));
+  if (SlewStatus == false)
+  {
+    lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
+  }
+
+
 }
