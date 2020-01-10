@@ -1,4 +1,4 @@
-//verion A1.1
+//verion A1.2
 // check the arrivedatdestination moveto values as they may need empirical change on testing
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
 //TEST#
@@ -49,6 +49,7 @@ long PKcurrentTime = 0;
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
 String QueryDir;
+String movementstate;
 String Version = "A1.1";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -188,15 +189,9 @@ void loop()
           stepper.moveTo(-100000);                      // negative is anticlockwise in accelstepper library
           SlewStatus = true;
         }
+        Serial.print("in slewto azimuth querydir is ");
+        Serial.print(QueryDir);
 
-        lcdprint(0,  0, lcdblankline);
-        lcdprint(0,  0, "Goto requested");
-        lcdprint(15, 0, receivedData);
-        lcdprint(0,  2, lcdblankline);
-        lcdprint(0,  2, String(SlewStatus));
-
-        lcdprint(0, 3, lcdblankline);
-        lcdprint(0, 3,  QueryDir);
 
         //  if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
         //  {
@@ -225,6 +220,7 @@ void loop()
       {
         Serial.print("Moving");
         Serial.println("#");
+        movementstate  = "Moving";               // for updating the lcdpanel
       }
       else
       {
@@ -259,7 +255,25 @@ void loop()
     ArrivedAtDestinationCheck();
     pkinterval = 0;
     pkstart = millis();
-    Serial.print("should be 2 secs  ");
+    Serial.println("should be 2 secs  ");
+    // update lcd panel
+    lcdprint(0,  0, lcdblankline);
+    lcdprint(0,  1, lcdblankline);
+    lcdprint(0,  2, lcdblankline);
+    lcdprint(0,  3, lcdblankline);
+
+
+    lcdprint(0,  0, "Goto request");
+    lcdprint(15, 0, receivedData);
+
+
+    lcdprint(0,  1, "Status:" + movementstate);
+    lcdprint(7,  2, QueryDir);
+
+    lcdprint(0, 3, "Distance to go");
+
+    lcdprint(16, 3,  String(int(TargetAzimuth -  getCurrentAzimuth())));
+
   }
 
   if (SlewStatus)                    // if the slew status is true, run the stepper and check for decel and stopping
@@ -366,13 +380,12 @@ void ArrivedAtDestinationCheck()
 
   if (stepper.distanceToGo() < 20)
   {
-    SlewStatus = false;                             // used to stop the motor in main loop
-
-    lcdprint(0, 2, lcdblankline);
-    lcdprint(0, 2, "Movement Stopped.   ");
-    lcdprint(0, 4, lcdblankline);
-    lcdprint(0, 4, "Target achieved.    ");
-
+    SlewStatus = false;                      // used to stop the motor in main loop
+    movementstate  = "Not Moving";           // for updating the lcdpanel
+  }
+  else
+  {
+    movementstate  = "Moving";              // for updating the lcdpanel
   }
 
 }
