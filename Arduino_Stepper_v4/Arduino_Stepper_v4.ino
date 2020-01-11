@@ -34,7 +34,7 @@ AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 String receivedData;
 double TargetAzimuth, CurrentAzimuth;
 
-boolean do_once;
+boolean DoTheDeceleration;
 boolean SlewStatus;           // controls whether the stepper is stepped in the main loop
 float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
@@ -70,7 +70,7 @@ void setup()
   StepsPerSecond = 500.0;                       // changed following empirical testing
   normalAcceleration = 50;                       // changed following empirical testing
   stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
-
+  stepper.setCurrentPosition(0);
   stepper.setAcceleration(normalAcceleration);  // steps per second per second.
   // Note V= acceleration * time, so a vlue of e.g. 1 step /s/s takes 10 secs to reach maxspeed of 10 or 15 secs to reach maxspeed 15 etc
   //
@@ -82,7 +82,7 @@ void setup()
   // initialise
 
   CurrentAzimuth = 0.0;
-  do_once = true;      // used to set deceleration towards target azimuth
+  DoTheDeceleration = true;      // used to set deceleration towards target azimuth
   pkstart = millis();
 
   lcd.begin(20, 4);                      // 20 columns x 4 rows
@@ -92,12 +92,15 @@ void setup()
 
 
   TargetAzimuth =  getCurrentAzimuth();
+
+
+
   // Serial.print("The value of getcurrentazimuth function is  ");
   // Serial.println (getCurrentAzimuth(CurrentAzimuth));
 
   Serial.print("The target has been initialised to ");
   Serial.println (TargetAzimuth);
-  delay(5000);
+  delay(4000);
 } // end setup
 
 /*
@@ -174,25 +177,26 @@ void loop()
       {
 
         stepper.setAcceleration(normalAcceleration);      // set the acceleration
-
+        stepper.setCurrentPosition(0);                    // initialise the stepper position
         QueryDir = WhichDirection();                         // work out which direction of travle is optimum
 
         if (QueryDir == "clockwise")
         {
-
+Serial.println("setting stepper target position to 100000");
           stepper.moveTo(100000);                         // positive number means clockwise in accelstepper library
           SlewStatus = true;
         }
 
         if (QueryDir == "anticlockwise")
         {
+          Serial.println("setting stepper target position to -100000");
           stepper.moveTo(-100000);                      // negative is anticlockwise in accelstepper library
           SlewStatus = true;
         }
         Serial.print("in slewto azimuth querydir is ");
         Serial.print(QueryDir);
 
-
+        DoTheDeceleration = true;
         //  if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
         //  {
         //    Emergency_Stop(TargetAzimuth, "Target Az failure   ");
@@ -245,6 +249,7 @@ void loop()
   if (pkinterval > 2000 )
   {
     ArrivedAtDestinationCheck();
+    UpdateThelcdPanel();
     pkinterval = 0;
     pkstart = millis();
     //Serial.println("should be 2 secs  ");   //test only
@@ -326,46 +331,46 @@ String WhichDirection()
 void ArrivedAtDestinationCheck()
 {
 
-  if (do_once)
+  if (DoTheDeceleration)
   {
     //Serial.print("do once ");
-    delay (1000);  // remove
+    //delay (1000);  // remove
     CurrentAzimuth =   getCurrentAzimuth();
 
     if (     (abs(CurrentAzimuth - TargetAzimuth) < 5)    && (TargetChanged == true)   )                    // within 5 degrees of target
     {
-      do_once = false;
+      DoTheDeceleration = false;
       if (QueryDir == "clockwise")
       {
         // set the moveto position to allow 100 steps more for deceleration  +ve for clockwise -ve for anticclock
 
-        stepper.moveTo(stepper.currentPosition() + 150);
+        stepper.moveTo(stepper.currentPosition() + 1000);
 
       }
 
       if (QueryDir == "anticlockwise")
       {
 
-        stepper.moveTo(stepper.currentPosition() - 150);             // check this by printing out current position is it negative?
+        stepper.moveTo(stepper.currentPosition() - 1000);             // check this by printing out current position is it negative?
 
       }
     }
 
   }
 
-  if (    abs( stepper.distanceToGo() < 20 )    )
+  if (    abs( stepper.distanceToGo() ) < 20    )
   {
     SlewStatus = false;                      // used to stop the motor in main loop
     movementstate  = "Not Moving";           // for updating the lcdpanel
 
-    Serial.print("Stopped now....");
+    Serial.print("Stopped ....");
     Serial.println();
   }
   else
   {
     movementstate  = "Moving";              // for updating the lcdpanel
   }
-
+Serial.println("movement state is " + movementstate);   //remove
 }
 
 double getCurrentAzimuth()
@@ -385,7 +390,7 @@ double getCurrentAzimuth()
   {
     Serial3.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
     delay(200);  // for response to arrive
-
+    //Serial.print("here......");
     if (Serial3.available() > 0)                            // when serial data arrives capture it into a string
     {
 
@@ -398,7 +403,7 @@ double getCurrentAzimuth()
         //  Serial.println(receipt);                             //remove this after testing as it destroye the protocol integrity
 
         validaz = true;
-
+        //Serial.print("valid az rec'd......");
       }
     }
     //convert receipt to double as az and return it
