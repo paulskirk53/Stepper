@@ -40,17 +40,17 @@ float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller
 
 boolean TargetChanged = false;
 
-int normalAcceleration;
-int lower_limit = 0;
-int upper_limit = 360;
-long pkinterval = 0;
-long pkstart    = 0;
+int  normalAcceleration;
+int  lower_limit   = 0;
+int  upper_limit   = 360;
+long pkinterval    = 0;
+long pkstart       = 0;
 long PKcurrentTime = 0;
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
 String QueryDir;
 String movementstate;
-String Version = "A1.4";
+String pkversion = "A1.4";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -61,8 +61,8 @@ void setup()
 {
   // put your setup code here, to run once:
 
-  Serial.begin(115200) ;                        // start serial ports - usb with PC
-  Serial3.begin(115200);                        // start usb with encoder
+  Serial.begin(19200) ;                        // start serial ports - usb with PC
+  Serial3.begin(19200);                        // start usb with encoder
   stepper.stop();                               // set initial state as stopped
   // Change below to suit the stepper
 
@@ -88,7 +88,7 @@ void setup()
   lcd.begin(20, 4);                      // 20 columns x 4 rows
   lcd.clear();
   lcdprint(0, 0, "MCU-stepper Ready");
-  lcdprint(0, 1, "Version " +  Version);
+  lcdprint(0, 1, "Version " +  pkversion);
 
 
   TargetAzimuth =  getCurrentAzimuth();
