@@ -376,7 +376,7 @@ void WithinFiveDegrees()
       {
         // set the moveto position to allow 100 steps more for deceleration  +ve for clockwise -ve for anticclock
         //    stepper.setCurrentPosition(0);
-        stepper.moveTo(stepper.currentPosition() + 50); //FROM MA860H Datasheet @0.225 step angle, it requires 1600 steps per rotation
+        stepper.moveTo(stepper.currentPosition() + 500); //FROM MA860H Datasheet @0.225 step angle, it requires 1600 steps per rotation
         //of the stepper drive wheel, so 1000 is 0.6 of a rotation
         //  Serial.println();
         //  Serial.print("stepper clockwise decel pos is ");
@@ -387,7 +387,7 @@ void WithinFiveDegrees()
       if (QueryDir == "anticlockwise")
       {
         //  stepper.setCurrentPosition(0);
-        stepper.moveTo(stepper.currentPosition() - 50);             // check this by printing out current position is it negative?
+        stepper.moveTo(stepper.currentPosition() - 500);             // check this by printing out current position is it negative?
         //  Serial.println();
         //  Serial.print("stepper anticlockwise decel pos is ");
         //  Serial.println(stepper.currentPosition() - 50);
