@@ -1,4 +1,4 @@
-//verion A1.5 - change the variable in setup too
+//verion A2.0 - change the variable in setup too
 // check the final moveto values as they may need empirical change on testing
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
 //TEST#
@@ -49,7 +49,7 @@ long PKcurrentTime = 0;
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
 String QueryDir;
 String movementstate;
-String pkversion = "A1.5";
+String pkversion = "A2.0";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -62,8 +62,8 @@ void setup()
 
   Serial.begin(19200) ;                        // start serial ports - usb with PC
   Serial3.begin(19200);                        // start usb with encoder
-  pinMode(15, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial3 Rx pin to 5v. 
-                                               // It transformed the workings of the serial link to the encoder
+  pinMode(15, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial3 Rx pin to 5v.
+  // It transformed the workings of the serial link to the encoder
   stepper.stop();                               // set initial state as stopped
   // Change below to suit the stepper
 
@@ -91,7 +91,7 @@ void setup()
   lcdprint(0, 0, "MCU-stepper Ready");
   lcdprint(0, 1, "Version " +  pkversion);
 
-
+  Serial.println("The target is about to be initialised ");
   TargetAzimuth =  getCurrentAzimuth();
 
 
@@ -184,19 +184,19 @@ void loop()
 
         if (QueryDir == "clockwise")
         {
-         // Serial.println("setting stepper target position to 100000");
+          // Serial.println("setting stepper target position to 100000");
           stepper.moveTo(100000);                         // positive number means clockwise in accelstepper library
 
         }
 
         if (QueryDir == "anticlockwise")
         {
-        //  Serial.println("setting stepper target position to -100000");
+          //  Serial.println("setting stepper target position to -100000");
           stepper.moveTo(-100000);                      // negative is anticlockwise in accelstepper library
 
         }
-       // Serial.print("in slewto azimuth querydir is ");
-       // Serial.print(QueryDir);
+        // Serial.print("in slewto azimuth querydir is ");
+        // Serial.print(QueryDir);
 
         DoTheDeceleration = true;
         //  if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
@@ -282,19 +282,19 @@ void loop()
     movementstate  = "Moving";              // for updating the lcdpanel
   }
   // Serial.println("movement state is " + movementstate);   //remove
-/*
-  if (QueryDir == "anticlockwise")
-  {
-    Serial.print("ABS STEPPER distance to go  ANTI....");
-    Serial.println(    abs( stepper.distanceToGo()    )        );
-  }
+  /*
+    if (QueryDir == "anticlockwise")
+    {
+      Serial.print("ABS STEPPER distance to go  ANTI....");
+      Serial.println(    abs( stepper.distanceToGo()    )        );
+    }
 
-  if (QueryDir == "clockwise")
-  {
-    Serial.print("                ABS STEPPER distance to go  CLOCK....");
-    Serial.println(    abs( stepper.distanceToGo()    )        );
-  }
-*/
+    if (QueryDir == "clockwise")
+    {
+      Serial.print("                ABS STEPPER distance to go  CLOCK....");
+      Serial.println(    abs( stepper.distanceToGo()    )        );
+    }
+  */
 
 } // end void Loop
 
@@ -378,20 +378,20 @@ void WithinFiveDegrees()
         //    stepper.setCurrentPosition(0);
         stepper.moveTo(stepper.currentPosition() + 50); //FROM MA860H Datasheet @0.225 step angle, it requires 1600 steps per rotation
         //of the stepper drive wheel, so 1000 is 0.6 of a rotation
-      //  Serial.println();
-      //  Serial.print("stepper clockwise decel pos is ");
-      //  Serial.println(stepper.currentPosition() + 50);
-      //  Serial.println();
+        //  Serial.println();
+        //  Serial.print("stepper clockwise decel pos is ");
+        //  Serial.println(stepper.currentPosition() + 50);
+        //  Serial.println();
       }
 
       if (QueryDir == "anticlockwise")
       {
         //  stepper.setCurrentPosition(0);
         stepper.moveTo(stepper.currentPosition() - 50);             // check this by printing out current position is it negative?
-      //  Serial.println();
-      //  Serial.print("stepper anticlockwise decel pos is ");
-      //  Serial.println(stepper.currentPosition() - 50);
-      //  Serial.println();
+        //  Serial.println();
+        //  Serial.print("stepper anticlockwise decel pos is ");
+        //  Serial.println(stepper.currentPosition() - 50);
+        //  Serial.println();
       }
     }
 
@@ -416,8 +416,13 @@ double getCurrentAzimuth()
   {
     tries++;
     Serial3.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
-    delay(100);  // for response to arrive
-    //Serial.print("here......");
+    //delay(100);  // for response to arrive
+  //  Serial.println("just before if serial available......");
+
+    while (  !  (Serial3.available() > 0 )    )
+    {
+    }
+
     if (Serial3.available() > 0)                            // when serial data arrives capture it into a string
     {
 
@@ -426,8 +431,8 @@ double getCurrentAzimuth()
       if (  (az > 0) && (az <= 360) )
       {
 
-        //  Serial.print("in az validation az is ");
-        //  Serial.println(String(az));                             //remove this after testing as it destroye the protocol integrity
+       // Serial.print("in az validation az is ");
+       // Serial.println(String(az));                             //remove this after testing as it destroye the protocol integrity
 
         validaz = true;
         //Serial.print("valid az rec'd......");
