@@ -91,7 +91,7 @@ void setup()
   lcdprint(0, 0, "MCU-stepper Ready");
   lcdprint(0, 1, "Version " +  pkversion);
 
-  Serial.println("The target is about to be initialised ");
+  //Serial.println("The target is about to be initialised ");
   TargetAzimuth =  getCurrentAzimuth();
 
 
@@ -99,9 +99,9 @@ void setup()
   // Serial.print("The value of getcurrentazimuth function is  ");
   // Serial.println (getCurrentAzimuth(CurrentAzimuth));
 
-  Serial.print("The target has been initialised to ");
-  Serial.println (TargetAzimuth);
-  delay(4000);
+  //Serial.print("The target has been initialised to ");
+ // Serial.println (TargetAzimuth);
+  delay(2000);
 } // end setup
 
 /*
@@ -171,9 +171,9 @@ void loop()
       TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
       TargetChanged = true;
 
-      Serial.println();
-      Serial.print("in slewto target received ");
-      Serial.println(TargetAzimuth);
+    //  Serial.println();
+    //  Serial.print("in slewto target received ");
+    //  Serial.println(TargetAzimuth);
 
       if (SlewStatus == false)             // only do this if not slewing
       {
@@ -354,8 +354,8 @@ String WhichDirection()
 
   return dir;
   // code above optimises movement to take the shortest distance
-  Serial.print("which direct ? dir is ");
-  Serial.println(dir);
+ // Serial.print("which direct ? dir is ");
+ // Serial.println(dir);
 
   //delay (1000);   // remove for test only
 }
