@@ -101,7 +101,7 @@ void setup()
   // Serial.println (getCurrentAzimuth(CurrentAzimuth));
 
   //Serial.print("The target has been initialised to ");
- // Serial.println (TargetAzimuth);
+  // Serial.println (TargetAzimuth);
   delay(2000);
 } // end setup
 
@@ -172,9 +172,9 @@ void loop()
       TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
       TargetChanged = true;
 
-    //  Serial.println();
-    //  Serial.print("in slewto target received ");
-    //  Serial.println(TargetAzimuth);
+      //  Serial.println();
+      //  Serial.print("in slewto target received ");
+      //  Serial.println(TargetAzimuth);
 
       if (SlewStatus == false)             // only do this if not slewing
       {
@@ -248,11 +248,11 @@ void loop()
 
   pkinterval = PKcurrentTime - pkstart ;
 
- //CurrentAzimuth = getCurrentAzimuth();
+//  CurrentAzimuth = getCurrentAzimuth();
 
   if (pkinterval > 500 )                // half second checks for azimuth value as the dome moves
   {
-
+   
     UpdateThelcdPanel();
     pkinterval = 0;
     pkstart = millis();
@@ -270,7 +270,7 @@ void loop()
   }
 
 
-  if (    abs( stepper.distanceToGo() ) < 20    )
+  if (    abs( stepper.distanceToGo() ) < 20   )        
   {
     SlewStatus = false;                      // used to stop the motor in main loop
     movementstate  = "Not Moving";           // for updating the lcdpanel
@@ -355,8 +355,8 @@ String WhichDirection()
 
   return dir;
   // code above optimises movement to take the shortest distance
- // Serial.print("which direct ? dir is ");
- // Serial.println(dir);
+  // Serial.print("which direct ? dir is ");
+  // Serial.println(dir);
 
   //delay (1000);   // remove for test only
 }
@@ -367,7 +367,7 @@ void WithinFiveDegrees()
   if (DoTheDeceleration)
   {
 
-      CurrentAzimuth =   getCurrentAzimuth();
+    CurrentAzimuth =   getCurrentAzimuth();
 
     if (     (abs(CurrentAzimuth - TargetAzimuth) < 5)    && (TargetChanged == true)   )                       // within 5 degrees of target
     {
@@ -418,7 +418,7 @@ double getCurrentAzimuth()
     tries++;
     Serial3.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
     //delay(100);  // for response to arrive
-  //  Serial.println("just before if serial available......");
+    //  Serial.println("just before if serial available......");
 
     while (  !  (Serial3.available() > 0 )    )
     {
@@ -432,8 +432,8 @@ double getCurrentAzimuth()
       if (  (az > 0) && (az <= 360) )
       {
 
-       // Serial.print("in az validation az is ");
-       // Serial.println(String(az));                             //remove this after testing as it destroye the protocol integrity
+        // Serial.print("in az validation az is ");
+        // Serial.println(String(az));                             //remove this after testing as it destroye the protocol integrity
 
         validaz = true;
         //Serial.print("valid az rec'd......");
