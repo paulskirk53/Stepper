@@ -42,6 +42,7 @@ boolean TargetChanged = false;
 int  normalAcceleration;
 int  lower_limit   = 0;
 int  upper_limit   = 360;
+long DecelValue    = 300;
 long pkinterval    = 0;
 long pkstart       = 0;
 long PKcurrentTime = 0;
@@ -247,7 +248,7 @@ void loop()
 
   pkinterval = PKcurrentTime - pkstart ;
 
-  CurrentAzimuth = getCurrentAzimuth();
+ //CurrentAzimuth = getCurrentAzimuth();
 
   if (pkinterval > 500 )                // half second checks for azimuth value as the dome moves
   {
@@ -366,7 +367,7 @@ void WithinFiveDegrees()
   if (DoTheDeceleration)
   {
 
-    //  CurrentAzimuth =   getCurrentAzimuth();
+      CurrentAzimuth =   getCurrentAzimuth();
 
     if (     (abs(CurrentAzimuth - TargetAzimuth) < 5)    && (TargetChanged == true)   )                       // within 5 degrees of target
     {
@@ -376,7 +377,7 @@ void WithinFiveDegrees()
       {
         // set the moveto position to allow 100 steps more for deceleration  +ve for clockwise -ve for anticclock
         //    stepper.setCurrentPosition(0);
-        stepper.moveTo(stepper.currentPosition() + 500); //FROM MA860H Datasheet @0.225 step angle, it requires 1600 steps per rotation
+        stepper.moveTo(stepper.currentPosition() + DecelValue); //FROM MA860H Datasheet @0.225 step angle, it requires 1600 steps per rotation
         //of the stepper drive wheel, so 1000 is 0.6 of a rotation
         //  Serial.println();
         //  Serial.print("stepper clockwise decel pos is ");
@@ -387,7 +388,7 @@ void WithinFiveDegrees()
       if (QueryDir == "anticlockwise")
       {
         //  stepper.setCurrentPosition(0);
-        stepper.moveTo(stepper.currentPosition() - 500);             // check this by printing out current position is it negative?
+        stepper.moveTo(stepper.currentPosition() - DecelValue);             // check this by printing out current position is it negative?
         //  Serial.println();
         //  Serial.print("stepper anticlockwise decel pos is ");
         //  Serial.println(stepper.currentPosition() - 50);
@@ -472,7 +473,7 @@ void UpdateThelcdPanel()
   else
   {
     lcdprint(0, 3, "Distance to go");
-    lcdprint(16, 3,  String(int(TargetAzimuth -  getCurrentAzimuth()) ) );
+    lcdprint(16, 3,  String(int(TargetAzimuth -  CurrentAzimuth) ) );
   }
 
 
