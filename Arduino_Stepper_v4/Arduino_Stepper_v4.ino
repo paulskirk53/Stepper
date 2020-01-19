@@ -59,6 +59,7 @@ String pkversion = "A2.0";
 
 void setup()
 {
+  delay(5000);
   // put your setup code here, to run once:
 
   Serial.begin(19200) ;                        // start serial ports - usb with PC
