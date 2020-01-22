@@ -40,8 +40,7 @@ float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller
 boolean TargetChanged = false;
 
 int  normalAcceleration;
-int  lower_limit   = 0;
-int  upper_limit   = 360;
+
 long DecelValue    = 300;
 long pkinterval    = 0;
 long pkstart       = 0;
@@ -61,10 +60,10 @@ void setup()
 {
   delay(5000);
   // put your setup code here, to run once:
-
+  pinMode(15, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial3 Rx pin to 5v.
   Serial.begin(19200) ;                        // start serial ports - usb with PC
   Serial3.begin(19200);                        // start usb with encoder
-  pinMode(15, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial3 Rx pin to 5v.
+
   // It transformed the workings of the serial link to the encoder
   stepper.stop();                               // set initial state as stopped
   // Change below to suit the stepper
@@ -201,10 +200,7 @@ void loop()
         // Serial.print(QueryDir);
 
         DoTheDeceleration = true;
-        //  if ((TargetAzimuth < lower_limit ) || (TargetAzimuth > upper_limit))   //error trap azimuth value
-        //  {
-        //    Emergency_Stop(TargetAzimuth, "Target Az failure   ");
-        //  }
+
 
 
         receivedData = "";
@@ -249,11 +245,11 @@ void loop()
 
   pkinterval = PKcurrentTime - pkstart ;
 
-//  CurrentAzimuth = getCurrentAzimuth();
+  //  CurrentAzimuth = getCurrentAzimuth();
 
   if (pkinterval > 500 )                // half second checks for azimuth value as the dome moves
   {
-   
+
     UpdateThelcdPanel();
     pkinterval = 0;
     pkstart = millis();
@@ -271,7 +267,7 @@ void loop()
   }
 
 
-  if (    abs( stepper.distanceToGo() ) < 20   )        
+  if (    abs( stepper.distanceToGo() ) < 20   )
   {
     SlewStatus = false;                      // used to stop the motor in main loop
     movementstate  = "Not Moving";           // for updating the lcdpanel
