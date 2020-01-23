@@ -58,11 +58,10 @@ String pkversion = "A2.0";
 
 void setup()
 {
-  delay(5000);
+ 
   // put your setup code here, to run once:
   pinMode(15, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial3 Rx pin to 5v.
-  Serial.begin(19200) ;                        // start serial ports - usb with PC
-  Serial3.begin(19200);                        // start usb with encoder
+
 
   // It transformed the workings of the serial link to the encoder
   stepper.stop();                               // set initial state as stopped
@@ -93,7 +92,7 @@ void setup()
   lcdprint(0, 1, "Version " +  pkversion);
 
   //Serial.println("The target is about to be initialised ");
-  TargetAzimuth =  getCurrentAzimuth();
+
 
 
 
@@ -103,6 +102,12 @@ void setup()
   //Serial.print("The target has been initialised to ");
   // Serial.println (TargetAzimuth);
   delay(2000);
+
+  Serial.begin(19200) ;                        // start serial ports - usb with PC
+  Serial3.begin(19200);                        // start usb with encoder
+
+  TargetAzimuth =  getCurrentAzimuth();        // uses Serial3
+  
 } // end setup
 
 /*
