@@ -31,11 +31,11 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 
-String receivedData;
-double TargetAzimuth, CurrentAzimuth;
+String  receivedData;
+double  TargetAzimuth, CurrentAzimuth;
 boolean DoTheDeceleration;
 boolean SlewStatus;           // controls whether the stepper is stepped in the main loop
-float StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
+float   StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
 boolean TargetChanged = false;
 
