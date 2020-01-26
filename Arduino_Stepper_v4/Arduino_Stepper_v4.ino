@@ -422,9 +422,9 @@ double getCurrentAzimuth()
     //delay(100);  // for response to arrive
     //  Serial.println("just before if serial available......");
 
-    while (  !  (Serial3.available() > 0 )    )
-    {
-    }
+//    while (  !  (Serial3.available() > 0 )    )
+//    {
+//    }
 
     if (Serial3.available() > 0)                            // when serial data arrives capture it into a string
     {
