@@ -42,9 +42,9 @@ boolean TargetChanged = false;
 int  normalAcceleration;
 
 long DecelValue    = 300;
-long pkinterval    = 0;
+
 long pkstart       = 0;
-long PKcurrentTime = 0;
+
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
 String QueryDir;
@@ -128,7 +128,7 @@ void loop()
 
     receivedData = Serial.readStringUntil('#');          // read a string from PC serial port usb
 
-
+/*
     if (receivedData.startsWith("TEST", 0))
     {
       lcd.setCursor(0, 0);
@@ -152,6 +152,7 @@ void loop()
       //
       receivedData = "";
     }
+    */
 
 
     if (receivedData.startsWith("ES", 0))               // Emergency stop requested from C# driver
@@ -227,14 +228,14 @@ void loop()
 
       if (SlewStatus)
       {
-        Serial.print("Moving");
-        Serial.println("#");
+        Serial.print("Moving#");
+       // Serial.println("#");
 
       }
       else
       {
-        Serial.print("Notmoving");               // sent to serial USB and picked up by the driver
-        Serial.println("#");
+        Serial.print("Notmoving#");               // sent to serial USB and picked up by the driver
+       // Serial.println("#");
 
       }
       receivedData = "";
@@ -246,17 +247,17 @@ void loop()
 
   //CHECK  FOR CURRENT AZIMUTH
 
-  PKcurrentTime = millis();
+  
 
-  pkinterval = PKcurrentTime - pkstart ;
+  
 
   //  CurrentAzimuth = getCurrentAzimuth();
 
-  if (pkinterval > 500 )                // half second checks for azimuth value as the dome moves
+  if (  (millis() - pkstart) > 500  )                // half second checks for azimuth value as the dome moves
   {
 
     UpdateThelcdPanel();
-    pkinterval = 0;
+    
     pkstart = millis();
     //Serial.println("should be 2 secs  ");   //test only
 
@@ -458,12 +459,12 @@ void UpdateThelcdPanel()
   lcdprint(0,  1, lcdblankline);
   lcdprint(0,  2, lcdblankline);
   lcdprint(0,  3, lcdblankline);
-
+stepper.run();
 
   lcdprint(0,  0, "Goto request");
   lcdprint(15, 0, String(int(TargetAzimuth)));
 
-
+stepper.run();
   lcdprint(0,  1, "Status:  " + movementstate);
   lcdprint(7,  2, QueryDir);
 
@@ -474,8 +475,10 @@ void UpdateThelcdPanel()
   }
   else
   {
+    stepper.run();
     lcdprint(0, 3, "Distance to go");
     lcdprint(16, 3,  String(int(TargetAzimuth -  CurrentAzimuth) ) );
+    stepper.run();
   }
 
 
