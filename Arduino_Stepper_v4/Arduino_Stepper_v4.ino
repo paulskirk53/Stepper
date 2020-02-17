@@ -249,17 +249,6 @@ void loop()
 
   }  // end software serial
 
- 
-
-  if (  (millis() - pkstart) > 1000.0  )                // half second checks for azimuth value as the dome moves
-  {
-
-      UpdateThelcdPanel();
-
-    pkstart = millis();
-    //Serial.println("should be 2 secs  ");   //test only
-
-  }
 
   WithinFiveDegrees();
 
@@ -267,6 +256,17 @@ void loop()
   {
 
     stepper.run();
+
+    //update the LCD info
+    //
+    if (  (millis() - pkstart) > 1000.0  )                // half second checks for azimuth value as the dome moves
+    {
+
+      UpdateThelcdPanel();
+
+      pkstart = millis();
+
+    }
 
   }
 
@@ -278,6 +278,12 @@ void loop()
 
     // Serial.print("ABS STEPPER distance to go....");
     // Serial.println();
+    //update the LCD
+
+    lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
+    lcdprint(0, 2, lcdblankline);
+
+
   }
   else
   {
@@ -446,33 +452,29 @@ float getCurrentAzimuth()
 
 void UpdateThelcdPanel()
 {
-
+  stepper.run();
   // update lcd panel
-  lcdprint(0,  0, lcdblankline);
-  lcdprint(0,  1, lcdblankline);
-  lcdprint(0,  2, lcdblankline);
-  lcdprint(0,  3, lcdblankline);
- 
+  //lcdprint(0,  0, lcdblankline);
+  //lcdprint(0,  1, lcdblankline);
+  //lcdprint(0,  2, lcdblankline);
+  //lcdprint(0,  3, lcdblankline);
 
-  lcdprint(0,  0, "Goto request");
+
+  lcdprint(0,  0, "Goto request        ");
+  stepper.run();
   lcdprint(15, 0, String(int(TargetAzimuth)));
+  stepper.run();
 
-  
   lcdprint(0,  1, "Status:  " + movementstate);
+  stepper.run();
   lcdprint(7,  2, QueryDir);
+  stepper.run();
 
-  if (SlewStatus == false)
-  {
-    lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
-    lcdprint(0, 2, lcdblankline);
-  }
-  else
-  {
-  
-    lcdprint(0, 3, "Distance to go");
-    lcdprint(16, 3,  String(int(TargetAzimuth -  CurrentAzimuth) ) );
-  
-  }
+  lcdprint(0, 3, "Distance to go");
+  stepper.run();
+  lcdprint(16, 3,  String(int(TargetAzimuth -  CurrentAzimuth) ) );
 
+  stepper.run();
 
 }
+//
