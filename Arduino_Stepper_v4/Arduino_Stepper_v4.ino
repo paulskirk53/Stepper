@@ -13,7 +13,7 @@
 // library for stepper
 
 #include <AccelStepper.h>
-#include <LiquidCrystal.h>
+#include <LiquidCrystal.h>  // this is the new Liquid Crystal library installed on Dev and Observatory 18-2-20
 
 // Define a stepper and the pins it will use
 
