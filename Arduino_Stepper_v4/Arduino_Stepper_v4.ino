@@ -1,3 +1,6 @@
+// have string TargetMessage = blankline;
+// then set the message - if slewstatus is true the message is "distance to go " . if slewstatus is false it's "Target Achieved "
+// add a call to update the lcd in the if block distancetogo < 20
 //verion A2.0 - change the variable in setup too
 //DECELVALUE AND NORMALACCELERATION LOOK GOOD
 // check the final moveto values as they may need empirical change on testing
@@ -48,6 +51,7 @@ long pkstart       = 0.0l;            //note i after 0.0 denotes long number - s
 
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
+String TargetMessage = lcdblankline;
 String QueryDir;
 String movementstate;
 String pkversion = "A2.0";
@@ -274,20 +278,22 @@ void loop()
   if (    abs( stepper.distanceToGo() ) < 20   )
   {
     SlewStatus = false;                      // used to stop the motor in main loop
-    movementstate  = "Not Moving";           // for updating the lcdpanel
+    movementstate  = "Stopped.  ";           // for updating the lcdpanel
 
     // Serial.print("ABS STEPPER distance to go....");
     // Serial.println();
     //update the LCD
-
-    lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
-    lcdprint(0, 2, lcdblankline);
+    TargetMessage = "Target achieved ";
+    UpdateThelcdPanel();
+    // lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
+    //  lcdprint(0, 2, lcdblankline);
 
 
   }
   else
   {
     movementstate  = "Moving";              // for updating the lcdpanel
+    TargetMessage = "Distance to go ";
     stepper.run();
   }
   // Serial.println("movement state is " + movementstate);   //remove
@@ -470,7 +476,7 @@ void UpdateThelcdPanel()
   lcdprint(7,  2, QueryDir);
   stepper.run();
 
-  lcdprint(0, 3, "Distance to go");
+  lcdprint(0, 3, TargetMessage);   // was "distance to go"
   stepper.run();
   lcdprint(16, 3,  String(int(TargetAzimuth -  CurrentAzimuth) ) );
 
