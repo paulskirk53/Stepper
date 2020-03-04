@@ -1,7 +1,8 @@
-// have string TargetMessage = blankline;
-// then set the message - if slewstatus is true the message is "distance to go " . if slewstatus is false it's "Target Achieved "
-// add a call to update the lcd in the if block distancetogo < 20
-//verion A2.0 - change the variable in setup too
+//USes the new faster LCD Library:
+// https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home#!usage
+//the above has good setup info for backlight and contrast analogue pins
+
+//verion A3.0 - change the variable in setup too
 //DECELVALUE AND NORMALACCELERATION LOOK GOOD
 // check the final moveto values as they may need empirical change on testing
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
@@ -54,7 +55,7 @@ String lcdblankline = "                    ";  //twenty spaces to blank lcd disp
 String TargetMessage = lcdblankline;
 String QueryDir;
 String movementstate;
-String pkversion = "A2.0";
+String pkversion = "A3.0";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
