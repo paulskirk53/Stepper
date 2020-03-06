@@ -338,26 +338,11 @@ void lcdprint(int col, int row, String mess)
 }
 
 String WhichDirection()
-{
-  // put in the code from the driver which does modulo stuff
-  int difference = 0;
-  int part1 = 0;
-  int part2 = 0;
-  int part3 = 0;
-  int DiffMod = 0;
+{                       // this routine decides which direction to go based on the difference betwen current and target azimuth
+  int DiffMod;
   String dir ;
 
-  CurrentAzimuth = getCurrentAzimuth();
-
-  difference = (int)(CurrentAzimuth - TargetAzimuth );
-  part1 = (int)(difference / 360);
-  if (difference < 0)
-  {
-    part1 = -1;
-  }
-  part2 = part1 * 360;
-  part3 = difference - part2;
-  DiffMod = part3;
+  DiffMod = AngleMod360();
 
   if (DiffMod >= 180)
   {
@@ -479,9 +464,35 @@ void UpdateThelcdPanel()
 
   lcdprint(0, 3, TargetMessage);   // was "distance to go"
   stepper.run();
-  lcdprint(16, 3,  String(int(TargetAzimuth -  CurrentAzimuth) ) );
+  lcdprint(16, 3, "   ");
+  lcdprint(16, 3,  String(AngleMod360() ) );    //this doesn't work if currentaz is less than 360 and 0>target az<180
 
   stepper.run();
 
+}
+int AngleMod360()
+{
+  // This routine looks at the current azimuth and the target azimuth and returns a value which is the difference modulo 360
+  // the reason this is coded is that it gives a different result from C++'s MOD function.
+  // See google sheets for the derivation algoritm - the sheet is called Target Azimuth Scenarios.
+
+  int difference = 0;
+  int part1 = 0;
+  int part2 = 0;
+  int Modresult = 0;
+
+
+  CurrentAzimuth = getCurrentAzimuth();
+
+  difference = (int)(CurrentAzimuth - TargetAzimuth );
+  part1 = (int)(difference / 360);
+  if (difference < 0)
+  {
+    part1 = -1;
+  }
+  part2 = part1 * 360;
+  Modresult  = difference - part2;
+
+  return Modresult;
 }
 //
