@@ -163,15 +163,24 @@ void loop()
         }
     */
 
-    /*
-        if (receivedData.startsWith("ES", 0))               // Emergency stop requested from C# driver
+
+
+    //*************************************************************************
+    //******** code for ES process below **************************************
+    //**** example of data sent by driver ES#  **************************
+    //*************************************************************************
+    //*************************************************************************
+
+
+    
+        if (receivedData.indexOf("ES", 0) > -1)               // Emergency stop requested from C# driver
         {
           lcd.clear();
-          Emergency_Stop(0.00, "Received ES");
+          Emergency_Stop(CurrentAzimuth, "Received ES");
           receivedData = "";
-        }                                                   // end Emergency Stop else clause
-      //not implemented as yet
-    */
+        }                                                   // end Emergency Stop 
+    
+    
 
     //*************************************************************************
     //******** code for SA process below **************************************
@@ -297,6 +306,7 @@ void loop()
     TargetMessage = "Distance to go ";
     stepper.run();
   }
+  
   // Serial.println("movement state is " + movementstate);   //remove
   /*
     if (QueryDir == "anticlockwise")
@@ -312,7 +322,7 @@ void loop()
     }
   */
 
-} // end void Loop
+} // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void Emergency_Stop(float azimuth, String mess)
@@ -462,10 +472,10 @@ void UpdateThelcdPanel()
   lcdprint(7,  2, QueryDir);
   stepper.run();
 
-  lcdprint(0, 3, TargetMessage);   // was "distance to go"
+  lcdprint(0, 3, TargetMessage);  
   stepper.run();
   lcdprint(16, 3, "   ");
-  lcdprint(16, 3,  String(AngleMod360() ) );    //this doesn't work if currentaz is less than 360 and 0>target az<180
+  lcdprint(16, 3,  String(AngleMod360() ) );  
 
   stepper.run();
 
