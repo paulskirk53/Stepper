@@ -23,7 +23,7 @@
 
 // pin definitions for step, dir and enable
 
-#define                stepPin 7             // step pin tested and works - motor moves
+#define                stepPin 7             
 #define                dirPin  8
 #define                enaPin  9             // presently n/c - the enable pin
 
@@ -44,18 +44,18 @@ float   StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controll
 
 boolean TargetChanged = false;
 
-int  normalAcceleration;               // -32768 to 32767
+float  normalAcceleration;               // was incorrectly set to data type int
 
-int DecelValue    = 900;
+int DecelValue    = 800;                // set after empirical test Oct 2020
 
-long pkstart       = 0.0l;            //note i after 0.0 denotes long number - same type as millis()
+long pkstart       = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
 
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
 String TargetMessage = lcdblankline;
 String QueryDir;
 String movementstate;
-String pkversion = "A3.0";
+String pkversion = "A4.0";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -74,8 +74,8 @@ void setup()
   // Change below to suit the stepper
 
   SlewStatus = false;
-  StepsPerSecond = 200.0;                       // changed following empirical testing
-  normalAcceleration = 40;                       // changed following empirical testing
+  StepsPerSecond = 300.0;                       // changed following empirical testing Oct 2020
+  normalAcceleration = 140.0;                    // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
   stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
   stepper.setCurrentPosition(0);
   stepper.setAcceleration(normalAcceleration);  // steps per second per second.
@@ -307,20 +307,7 @@ void loop()
     stepper.run();
   }
   
-  // Serial.println("movement state is " + movementstate);   //remove
-  /*
-    if (QueryDir == "anticlockwise")
-    {
-      Serial.print("ABS STEPPER distance to go  ANTI....");
-      Serial.println(    abs( stepper.distanceToGo()    )        );
-    }
-
-    if (QueryDir == "clockwise")
-    {
-      Serial.print("                ABS STEPPER distance to go  CLOCK....");
-      Serial.println(    abs( stepper.distanceToGo()    )        );
-    }
-  */
+ 
 
 } // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
 
