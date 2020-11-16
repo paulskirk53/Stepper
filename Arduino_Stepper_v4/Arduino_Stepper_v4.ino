@@ -2,6 +2,9 @@
 // https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home#!usage
 //the above has good setup info for backlight and contrast analogue pins
 
+//see this sheets URL for values related to deceleration used to inform values in this code
+// https://docs.google.com/spreadsheets/d/1IBvHXLke9fBvjETHgyCWAYHGpPX9WbbuqvsiXYv9Ix0/edit#gid=0
+
 //verion A3.0 - change the variable in setup too
 //DECELVALUE AND NORMALACCELERATION LOOK GOOD
 // check the final moveto values as they may need empirical change on testing
