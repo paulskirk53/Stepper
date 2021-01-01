@@ -1,4 +1,4 @@
-//here's nothing
+//here's nothing and some moe nothing
 //USes the new faster LCD Library:
 // https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home#!usage
 //the above has good setup info for backlight and contrast analogue pins
