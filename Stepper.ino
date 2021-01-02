@@ -27,7 +27,7 @@
 
 // pin definitions for step, dir and enable
 
-#define                stepPin 7             
+#define                stepPin 7
 #define                dirPin  8
 #define                enaPin  9             // presently n/c - the enable pin
 
@@ -48,11 +48,12 @@ float   StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controll
 
 boolean TargetChanged = false;
 
-float  normalAcceleration;               // was incorrectly set to data type int
+float  normalAcceleration;                            // was incorrectly set to data type int
 
-int DecelValue    = 800;                // set after empirical test Oct 2020
+int DecelValue                  = 800;                // set after empirical test Oct 2020
+int EncoderReplyCounter         = 0;
 
-long pkstart       = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
+long pkstart                    = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
 
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
@@ -176,15 +177,15 @@ void loop()
     //*************************************************************************
 
 
-    
-        if (receivedData.indexOf("ES", 0) > -1)               // Emergency stop requested from C# driver
-        {
-          lcd.clear();
-          Emergency_Stop(CurrentAzimuth, "Received ES");
-          receivedData = "";
-        }                                                   // end Emergency Stop 
-    
-    
+
+    if (receivedData.indexOf("ES", 0) > -1)               // Emergency stop requested from C# driver
+    {
+      lcd.clear();
+      Emergency_Stop(CurrentAzimuth, "Received ES");
+      receivedData = "";
+    }                                                   // end Emergency Stop
+
+
 
     //*************************************************************************
     //******** code for SA process below **************************************
@@ -310,8 +311,8 @@ void loop()
     TargetMessage = "Distance to go ";
     stepper.run();
   }
-  
- 
+
+
 
 } // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -339,7 +340,7 @@ void lcdprint(int col, int row, String mess)
 }
 
 String WhichDirection()
-{                       // this routine decides which direction to go based on the difference betwen current and target azimuth
+{ // this routine decides which direction to go based on the difference betwen current and target azimuth
   int DiffMod;
   String dir ;
 
@@ -413,38 +414,41 @@ float getCurrentAzimuth()
 
   //
   boolean validaz = false;
-  int tries = 0;
+
   while (validaz == false)
   {
-    tries++;
+
     Serial3.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
 
-    if (Serial3.available() > 0)                            // when serial data arrives capture it into a string
+    if (Serial3.available() > 0)                       // when serial data arrives capture it into a string
     {
 
-      String receipt = Serial3.readStringUntil('#');        // read a string from the encoder
-      az = receipt.toFloat();                              // convert
+      String receipt = Serial3.readStringUntil('#');   // read a string from the encoder
+      az = receipt.toFloat();                          // convert
+
       if (  (az > 0) && (az <= 360) )
       {
-
-        // Serial.print("in az validation az is ");
-        // Serial.println(String(az));                             //remove this after testing as it destroye the protocol integrity
-
         validaz = true;
-        //Serial.print("valid az rec'd......");
-      }
-    }
-    //convert receipt to float as az and return it
+        EncoderReplyCounter ++ ;                       // A counter used to indicate whether the encoder has replied with a valid azimuth
+        if (EncoderReplyCounter > 999)                 // reset to zero periodicaly
+        {
+          EncoderReplyCounter = 0;
+        }  //endif
+      }  //endif
 
+    }  // endif serial available
   }
-  // Serial.print("az  tries is ");
-  // Serial.println(tries);
 
   return az;
-}
+}   // end getCurrentAzimuth()
 
 void UpdateThelcdPanel()
 {
+
+
+  // for the new Arduino Monitor Winforms app, include 'EncoderReplyCounter' in the update
+
+
   stepper.run();
   // update lcd panel
   //lcdprint(0,  0, lcdblankline);
@@ -463,10 +467,10 @@ void UpdateThelcdPanel()
   lcdprint(7,  2, QueryDir);
   stepper.run();
 
-  lcdprint(0, 3, TargetMessage);  
+  lcdprint(0, 3, TargetMessage);
   stepper.run();
   lcdprint(16, 3, "   ");
-  lcdprint(16, 3,  String(AngleMod360() ) );  
+  lcdprint(16, 3,  String(AngleMod360() ) );
 
   stepper.run();
 
