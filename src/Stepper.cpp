@@ -25,8 +25,9 @@
 #include <arduino.h>
 #include <AccelStepper.h>
 #include <LiquidCrystal.h>  // this is the new Liquid Crystal library installed on Dev and Observatory 18-2-20
+#include <Wire.h>
 
-
+//function declarations
 void Emergency_Stop(float azimuth, String mess);
 void lcdprint(int col, int row, String mess);
 String WhichDirection();
@@ -34,6 +35,7 @@ void WithinFiveDegrees();
 float getCurrentAzimuth();
 void UpdateThelcdPanel();
 int AngleMod360();
+// end function declaratons
 
 // Define a stepper and the pins it will use
 
