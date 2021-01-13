@@ -1,10 +1,11 @@
 //here's nothing and some more nothing
 //another nothing statement
 //another nothing state  part 3
+//
 //USes the new faster LCD Library:
 // https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home#!usage
 //the above has good setup info for backlight and contrast analogue pins
-
+//
 //see this sheets URL for values related to deceleration used to inform values in this code
 // https://docs.google.com/spreadsheets/d/1IBvHXLke9fBvjETHgyCWAYHGpPX9WbbuqvsiXYv9Ix0/edit#gid=0
 
@@ -21,9 +22,18 @@
 // It acquires the current azimuth via hardware serial3 from the encoder
 
 // library for stepper
-
+#include <arduino.h>
 #include <AccelStepper.h>
 #include <LiquidCrystal.h>  // this is the new Liquid Crystal library installed on Dev and Observatory 18-2-20
+
+
+void Emergency_Stop(float azimuth, String mess);
+void lcdprint(int col, int row, String mess);
+String WhichDirection();
+void WithinFiveDegrees();
+float getCurrentAzimuth();
+void UpdateThelcdPanel();
+int AngleMod360();
 
 // Define a stepper and the pins it will use
 
