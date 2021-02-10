@@ -35,7 +35,7 @@ void WithinFiveDegrees();
 float getCurrentAzimuth();
 void UpdateThelcdPanel();
 int AngleMod360();
-// end function declaratons
+// end function declarations
 
 // Define a stepper and the pins it will use
 

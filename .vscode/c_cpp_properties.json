@@ -1,34 +1,61 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
 {
     "configurations": [
         {
-            "name": "Win32",
+            "name": "PlatformIO",
             "includePath": [
-                "${workspaceFolder}/**"
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/include",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/src",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/.pio/libdeps/megaatmega2560/LiquidCrystal",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/.pio/libdeps/megaatmega2560/AccelStepper/src",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-avr/cores/arduino",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-avr/variants/mega",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/HID/src",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+                "C:/Users/Paul/.platformio/packages/tool-unity",
+                ""
             ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/include",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/src",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/.pio/libdeps/megaatmega2560/LiquidCrystal",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/.pio/libdeps/megaatmega2560/AccelStepper/src",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-avr/cores/arduino",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-avr/variants/mega",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/HID/src",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+                    "C:/Users/Paul/.platformio/packages/tool-unity",
+                    ""
+                ]
+            },
             "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
+                "PLATFORMIO=50100",
+                "ARDUINO_AVR_MEGA2560",
+                "F_CPU=16000000L",
+                "ARDUINO_ARCH_AVR",
+                "ARDUINO=10808",
+                "__AVR_ATmega2560__",
+                ""
             ],
-            "windowsSdkVersion": "8.1",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "msvc-x64"
-        },
-        {
-            "name": "PK_intellisenseConfig",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
-            "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
-            ],
-            "windowsSdkVersion": "8.1",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "msvc-x64"
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "compilerPath": "C:/Users/Paul/.platformio/packages/toolchain-atmelavr@1.50400.190710/bin/avr-gcc.exe",
+            "compilerArgs": [
+                "-mmcu=atmega2560",
+                ""
+            ]
         }
     ],
     "version": 4
