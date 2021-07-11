@@ -12,6 +12,7 @@
 *.o
 *.so
 *.hex
+*.json
 
 # Packages #
 ############
