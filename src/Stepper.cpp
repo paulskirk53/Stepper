@@ -35,6 +35,8 @@ void WithinFiveDegrees();
 float getCurrentAzimuth();
 void UpdateThelcdPanel();
 int AngleMod360();
+void SendToMonitor();
+
 // end function declarations
 
 // Define a stepper and the pins it will use
@@ -72,7 +74,7 @@ long pkstart                    = 0.0l;              // note i after 0.0 denotes
 
 String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
 String TargetMessage = lcdblankline;
-String QueryDir;
+String QueryDir ="No Direction";
 String movementstate;
 String pkversion = "A4.0";
 /*
@@ -129,6 +131,7 @@ void setup()
   delay(2000);
 
   Serial.begin(19200) ;                        // start serial ports - usb with PC
+  Serial1.begin(19200);                        // monitor link
   Serial3.begin(19200);                        // start usb with encoder
 
   TargetAzimuth =  getCurrentAzimuth();        // uses Serial3
@@ -150,6 +153,7 @@ void loop()
 {
 
   // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
+
 
   if (Serial.available() > 0)                              // when serial data arrives from the driver on USB capture it into a string
   {
@@ -297,6 +301,9 @@ void loop()
 
       UpdateThelcdPanel();
 
+
+      // CHECK HERE IF Serial1 is available - request from monitor program
+
       pkstart = millis();
 
     }
@@ -322,7 +329,7 @@ void loop()
   else
   {
     movementstate  = "Moving";              // for updating the lcdpanel
-    TargetMessage = "Distance to go ";
+    TargetMessage = "Awaiting Target ";
     stepper.run();
   }
 
@@ -362,11 +369,11 @@ String WhichDirection()
 
   if (DiffMod >= 180)
   {
-    dir = "clockwise"; // the clockwise case
+    dir = "clockwise";      // the increasing Azimuth case
   }
   else
   {
-    dir = "anticlockwise";  //counerclockwise}
+    dir = "anticlockwise";  // the decreasing Azimuth case
   }
 
   return dir;
@@ -458,7 +465,21 @@ float getCurrentAzimuth()
 
 void UpdateThelcdPanel()
 {
-
+  /*
+  if (Serial1.available() > 0)        // serial 1 is the monitor program link
+  {
+  String MonitorRequest ="";
+  MonitorRequest=  Serial1.readStringUntil('#');
+  if (MonitorRequest.indexOf("Ping", 0) > -1)     
+  {
+    Serial.print("sending");
+    SendToMonitor();
+    Serial.println("sent");
+  }
+  
+  }
+  */
+  // this sends the data to the monitor program
 
   // for the new Arduino Monitor Winforms app, include 'EncoderReplyCounter' in the update
 
@@ -470,7 +491,7 @@ void UpdateThelcdPanel()
   //lcdprint(0,  2, lcdblankline);
   //lcdprint(0,  3, lcdblankline);
 
-
+SendToMonitor();
   lcdprint(0,  0, "Goto request        ");
   stepper.run();
   lcdprint(15, 0, String(int(TargetAzimuth)));
@@ -478,13 +499,23 @@ void UpdateThelcdPanel()
 
   lcdprint(0,  1, "Status:  " + movementstate);
   stepper.run();
+
   lcdprint(7,  2, QueryDir);
   stepper.run();
 
   lcdprint(0, 3, TargetMessage);
   stepper.run();
   lcdprint(16, 3, "   ");
-  lcdprint(16, 3,  String(AngleMod360() ) );
+  if (QueryDir =="clockwise")
+    {
+      lcdprint(16, 3,  String(360 - AngleMod360() ) );    // try this to check if the distance to go is correct
+    }
+    else
+    {
+
+      lcdprint(16, 3,  String(AngleMod360() ) );    // try this to check if the distance to go is correct 
+    }
+  
 
   stepper.run();
 
@@ -514,4 +545,41 @@ int AngleMod360()
 
   return Modresult;
 }
-//
+
+void SendToMonitor()
+{
+
+  Serial.println("START#");
+  Serial.println(String(int(TargetAzimuth))   + '#');
+  Serial.println(movementstate                + '#');
+  Serial.println(QueryDir                     + '#');
+  Serial.println(TargetMessage                + '#');
+    
+  Serial.println(String(EncoderReplyCounter)  + '#');
+
+
+  Serial1.print("START#");
+  Serial1.print(String(int(TargetAzimuth))   + '#');
+  Serial1.print(movementstate                + '#');
+  Serial1.print(QueryDir                     + '#');
+  Serial1.print(TargetMessage                + '#');
+  if (QueryDir =="clockwise")
+  {
+    Serial1.print(String(360 - AngleMod360() )       + '#'); 
+    Serial.println(String(AngleMod360())        + '#');        // note this is a test print from the block above and is serial not serial1
+  }
+  else
+  {
+  Serial1.print(String(AngleMod360() )       + '#');         //this is not the correct value to display a count down
+  }
+  Serial1.print(String(EncoderReplyCounter)  + '#');
+  /*
+  list of data need by the monitor program
+  targetazimuth
+  movementstate
+  querydir
+  targetmessage
+  anglemod360
+  encoderreplycounter
+  */
+}

@@ -8,13 +8,16 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/include",
-                "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/src",
-                "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/.pio/libdeps/megaatmega2560/LiquidCrystal",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/include",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/src",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/LiquidCrystal",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
-                "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/.pio/libdeps/megaatmega2560/AccelStepper/src",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/AccelStepper/src",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/avr-debugger/avr8-stub",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-avr/variants/mega",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/RF24",
+                "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/RF24/utility",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/HID/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
@@ -25,13 +28,16 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/include",
-                    "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/src",
-                    "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/.pio/libdeps/megaatmega2560/LiquidCrystal",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/include",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/src",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/LiquidCrystal",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
-                    "c:/Users/Paul/Documents/PlatformIO/Projects/Stepper/.pio/libdeps/megaatmega2560/AccelStepper/src",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/AccelStepper/src",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/avr-debugger/avr8-stub",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-avr/variants/mega",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/RF24",
+                    "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/megaatmega2560/RF24/utility",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/HID/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
@@ -41,7 +47,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=50100",
+                "PLATFORMIO=50200",
                 "ARDUINO_AVR_MEGA2560",
                 "F_CPU=16000000L",
                 "ARDUINO_ARCH_AVR",
@@ -51,7 +57,7 @@
             ],
             "cStandard": "c11",
             "cppStandard": "c++11",
-            "compilerPath": "C:/Users/Paul/.platformio/packages/toolchain-atmelavr@1.50400.190710/bin/avr-gcc.exe",
+            "compilerPath": "C:/Users/Paul/.platformio/packages/toolchain-atmelavr@1.70300.191015/bin/avr-gcc.exe",
             "compilerArgs": [
                 "-mmcu=atmega2560",
                 ""
