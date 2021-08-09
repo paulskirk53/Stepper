@@ -6,11 +6,11 @@
 //see this sheets URL for values related to deceleration used to inform values in this code
 // https://docs.google.com/spreadsheets/d/1IBvHXLke9fBvjETHgyCWAYHGpPX9WbbuqvsiXYv9Ix0/edit#gid=0
 
-//verion A3.0 - change the variable in setup too
+//verion 5.0 - change the variable in setup too
 //DECELVALUE AND NORMALACCELERATION LOOK GOOD
 // check the final moveto values as they may need empirical change on testing
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
-//TEST#
+//
 //ES# - emergency stop
 //SA999.99# - Slew to azimuth
 //SL# - Slew status request
@@ -18,7 +18,7 @@
 // The routine drives the stepper motor to move the Dome
 // It acquires the current azimuth via hardware serial3 from the encoder
 
-// library for stepper
+
 #include <arduino.h>
 #include <AccelStepper.h>
 #include <LiquidCrystal.h>  // this is the new Liquid Crystal library installed on Dev and Observatory 18-2-20
