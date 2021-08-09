@@ -24,18 +24,18 @@
 #include <LiquidCrystal.h>  // this is the new Liquid Crystal library installed on Dev and Observatory 18-2-20
 #include <Wire.h>
 
-//function declarations
-void Emergency_Stop(float azimuth, String mess);
-void lcdprint(int col, int row, String mess);
+//Forward declarations
+void   Emergency_Stop(float azimuth, String mess);
+void   lcdprint(int col, int row, String mess);
 String WhichDirection();
-void WithinFiveDegrees();
-float getCurrentAzimuth();
-void UpdateThelcdPanel();
-int AngleMod360();
-void SendToMonitor();
-void PowerOn();
-void PowerOff();
-// end function declarations
+void   WithinFiveDegrees();
+float  getCurrentAzimuth();
+void   UpdateThelcdPanel();
+int    AngleMod360();
+void   SendToMonitor();
+void   PowerOn();
+void   PowerOff();
+// end declarations
 
 
 // define the DC power control pin which is used to drive the gate of the solid state relay
@@ -59,26 +59,26 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 
 String  receivedData;
-float  TargetAzimuth, CurrentAzimuth;
+float   TargetAzimuth, CurrentAzimuth;
 boolean DoTheDeceleration;
 boolean SlewStatus;             // controls whether the stepper is stepped in the main loop
 float   StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
 boolean TargetChanged = false;
 
-float  normalAcceleration;                            // was incorrectly set to data type int
+float   normalAcceleration;                            // was incorrectly set to data type int
 
-int DecelValue                  = 800;                // set after empirical test Oct 2020
-int EncoderReplyCounter         = 0;
+int     DecelValue                  = 800;                // set after empirical test Oct 2020
+int     EncoderReplyCounter         = 0;
 
-long pkstart                    = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
+long    pkstart                     = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
 
 
-String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
-String TargetMessage = lcdblankline;
-String QueryDir ="No Direction";
-String movementstate;
-String pkversion = "5.0";
+String  lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
+String  TargetMessage = lcdblankline;
+String  QueryDir ="No Direction";
+String  movementstate;
+String  pkversion = "5.0";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -111,9 +111,9 @@ void setup()
 
   // initialise
 
-  CurrentAzimuth = 0.0;
+  CurrentAzimuth    = 0.0;
   DoTheDeceleration = true;      // used to set deceleration towards target azimuth
-  pkstart = millis();
+  pkstart           = millis();
 
   lcd.begin(20, 4);                      // 20 columns x 4 rows
   lcd.clear();
