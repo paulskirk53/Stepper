@@ -1,7 +1,4 @@
-//here's nothing and some more nothing
-//another nothing statement
-//another nothing state  part 3
-//
+// This code is the current software loaded on the Stepper MCU
 //USes the new faster LCD Library:
 // https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home#!usage
 //the above has good setup info for backlight and contrast analogue pins
@@ -81,7 +78,7 @@ String lcdblankline = "                    ";  //twenty spaces to blank lcd disp
 String TargetMessage = lcdblankline;
 String QueryDir ="No Direction";
 String movementstate;
-String pkversion = "A4.0";
+String pkversion = "5.0";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
