@@ -36,8 +36,13 @@ float getCurrentAzimuth();
 void UpdateThelcdPanel();
 int AngleMod360();
 void SendToMonitor();
-
+void PowerOn();
+void PowerOff();
 // end function declarations
+
+
+// define the DC power control pin which is used to drive the gate of the solid state relay
+#define power_pin             9        //checked and is free on the MCU board
 
 // Define a stepper and the pins it will use
 
@@ -213,6 +218,8 @@ void loop()
 
     if (receivedData.indexOf("SA", 0) > -1) //
     {
+      
+      PowerOn();                   //turn on the power supply for the stepper motor
       // strip off 1st 2 chars
       receivedData.remove(0, 2);
 
@@ -324,6 +331,7 @@ void loop()
     // lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
     //  lcdprint(0, 2, lcdblankline);
 
+    PowerOff();                                // power off the stepper
 
   }
   else
@@ -349,7 +357,8 @@ void Emergency_Stop(float azimuth, String mess)
   lcdprint(0, 0, "Stopped");
   lcdprint(0, 1, mess);
 
-
+  // todo turn off power to the stepper
+  PowerOff();
 }
 
 void lcdprint(int col, int row, String mess)
@@ -491,7 +500,7 @@ void UpdateThelcdPanel()
   //lcdprint(0,  2, lcdblankline);
   //lcdprint(0,  3, lcdblankline);
 
-SendToMonitor();
+  SendToMonitor();
   lcdprint(0,  0, "Goto request        ");
   stepper.run();
   lcdprint(15, 0, String(int(TargetAzimuth)));
@@ -568,7 +577,7 @@ void SendToMonitor()
     Serial1.print(String(360 - AngleMod360() )       + '#'); 
     Serial.println(String(AngleMod360())        + '#');        // note this is a test print from the block above and is serial not serial1
   }
-  else
+  else   //querydir is anticlockwise
   {
   Serial1.print(String(AngleMod360() )       + '#');         //this is not the correct value to display a count down
   }
@@ -582,4 +591,15 @@ void SendToMonitor()
   anglemod360
   encoderreplycounter
   */
+}
+void PowerOn()                          // set the power SSR gate high
+{
+digitalWrite(power_pin,      HIGH);
+
+delay(2000);                            // gives time for the MA860H unit to power on and stabilise
+}
+
+void PowerOff()                         // set the power SSR gate low
+{
+digitalWrite(power_pin,      LOW);
 }
