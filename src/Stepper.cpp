@@ -47,7 +47,7 @@ void   PowerOff();
 
 #define                stepPin 7
 #define                dirPin  8
-#define                enaPin  9             // presently n/c - the enable pin
+
 
 //liquid crystal two lines below
 const int rs = 27, en = 26, d4 = 25, d5 = 24, d6 = 23, d7 = 22;
