@@ -1,4 +1,4 @@
-// This code is the current software loaded on the Stepper MCU
+// This code is the current software loaded on the Stepper MCU - Last upload 9-8-21 from dev m/c
 //USes the new faster LCD Library:
 // https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home#!usage
 //the above has good setup info for backlight and contrast analogue pins
