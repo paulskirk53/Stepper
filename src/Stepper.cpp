@@ -478,9 +478,9 @@ void UpdateThelcdPanel()
   MonitorRequest=  Serial1.readStringUntil('#');
   if (MonitorRequest.indexOf("Ping", 0) > -1)     
   {
-    Serial.print("sending");
+   // Serial.print("sending");
     SendToMonitor();
-    Serial.println("sent");
+   // Serial.println("sent");
   }
   
   }
@@ -555,13 +555,13 @@ int AngleMod360()
 void SendToMonitor()
 {
 
-  Serial.println("START#");
-  Serial.println(String(int(TargetAzimuth))   + '#');
-  Serial.println(movementstate                + '#');
-  Serial.println(QueryDir                     + '#');
-  Serial.println(TargetMessage                + '#');
+ // Serial.println("START#");
+ // Serial.println(String(int(TargetAzimuth))   + '#');
+ // Serial.println(movementstate                + '#');
+ // Serial.println(QueryDir                     + '#');
+ // Serial.println(TargetMessage                + '#');
     
-  Serial.println(String(EncoderReplyCounter)  + '#');
+ // Serial.println(String(EncoderReplyCounter)  + '#');
 
 
   Serial1.print("START#");
@@ -572,11 +572,11 @@ void SendToMonitor()
   if (QueryDir =="clockwise")
   {
     Serial1.print(String(360 - AngleMod360() )       + '#'); 
-    Serial.println(String(AngleMod360())        + '#');        // note this is a test print from the block above and is serial not serial1
+    //Serial.println(String(AngleMod360())        + '#');        // note this is a test print from the block above and is serial not serial1
   }
   else   //querydir is anticlockwise
   {
-  Serial1.print(String(AngleMod360() )       + '#');         //this is not the correct value to display a count down
+  Serial1.print(String(AngleMod360() )       + '#');         
   }
   Serial1.print(String(EncoderReplyCounter)  + '#');
   /*
