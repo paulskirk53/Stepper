@@ -1,7 +1,6 @@
-//here's nothing and some more nothing
-//another nothing statement
-//another nothing state  part 3
-//
+//Delete this file after upload IT IS NOT CURRENT
+// This code is the current software loaded on the Stepper MCU - Last upload 9-9-21 from dev m/c
+//it's a copy of the cpp file renamed as arduino so it can be uploaded by arduino. 
 //USes the new faster LCD Library:
 // https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home#!usage
 //the above has good setup info for backlight and contrast analogue pins
@@ -9,11 +8,11 @@
 //see this sheets URL for values related to deceleration used to inform values in this code
 // https://docs.google.com/spreadsheets/d/1IBvHXLke9fBvjETHgyCWAYHGpPX9WbbuqvsiXYv9Ix0/edit#gid=0
 
-//verion A3.0 - change the variable in setup too
+//verion 5.0 - change the variable in setup too
 //DECELVALUE AND NORMALACCELERATION LOOK GOOD
 // check the final moveto values as they may need empirical change on testing
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
-//TEST#
+//
 //ES# - emergency stop
 //SA999.99# - Slew to azimuth
 //SL# - Slew status request
@@ -21,21 +20,28 @@
 // The routine drives the stepper motor to move the Dome
 // It acquires the current azimuth via hardware serial3 from the encoder
 
-// library for stepper
+
 #include <arduino.h>
 #include <AccelStepper.h>
 #include <LiquidCrystal.h>  // this is the new Liquid Crystal library installed on Dev and Observatory 18-2-20
 #include <Wire.h>
 
-//function declarations
-void Emergency_Stop(float azimuth, String mess);
-void lcdprint(int col, int row, String mess);
+//Forward declarations
+void   Emergency_Stop(float azimuth, String mess);
+void   lcdprint(int col, int row, String mess);
 String WhichDirection();
-void WithinFiveDegrees();
-float getCurrentAzimuth();
-void UpdateThelcdPanel();
-int AngleMod360();
-// end function declarations
+void   WithinFiveDegrees();
+float  getCurrentAzimuth();
+void   UpdateThelcdPanel();
+int    AngleMod360();
+void   SendToMonitor();
+void   PowerOn();
+void   PowerOff();
+// end declarations
+
+
+// define the DC power control pin which is used to drive the gate of the solid state relay
+#define power_pin             9        //checked and is free on the MCU board
 
 // Define a stepper and the pins it will use
 
@@ -43,7 +49,7 @@ int AngleMod360();
 
 #define                stepPin 7
 #define                dirPin  8
-#define                enaPin  9             // presently n/c - the enable pin
+
 
 //liquid crystal two lines below
 const int rs = 27, en = 26, d4 = 25, d5 = 24, d6 = 23, d7 = 22;
@@ -55,26 +61,26 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 
 String  receivedData;
-float  TargetAzimuth, CurrentAzimuth;
+float   TargetAzimuth, CurrentAzimuth;
 boolean DoTheDeceleration;
 boolean SlewStatus;             // controls whether the stepper is stepped in the main loop
 float   StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
 boolean TargetChanged = false;
 
-float  normalAcceleration;                            // was incorrectly set to data type int
+float   normalAcceleration;                            // was incorrectly set to data type int
 
-int DecelValue                  = 800;                // set after empirical test Oct 2020
-int EncoderReplyCounter         = 0;
+int     DecelValue                  = 800;                // set after empirical test Oct 2020
+int     EncoderReplyCounter         = 0;
 
-long pkstart                    = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
+long    pkstart                     = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
 
 
-String lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
-String TargetMessage = lcdblankline;
-String QueryDir;
-String movementstate;
-String pkversion = "A4.0";
+String  lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
+String  TargetMessage = lcdblankline;
+String  QueryDir ="No Direction";
+String  movementstate;
+String  pkversion = "5.0";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -107,9 +113,9 @@ void setup()
 
   // initialise
 
-  CurrentAzimuth = 0.0;
+  CurrentAzimuth    = 0.0;
   DoTheDeceleration = true;      // used to set deceleration towards target azimuth
-  pkstart = millis();
+  pkstart           = millis();
 
   lcd.begin(20, 4);                      // 20 columns x 4 rows
   lcd.clear();
@@ -129,6 +135,7 @@ void setup()
   delay(2000);
 
   Serial.begin(19200) ;                        // start serial ports - usb with PC
+  Serial1.begin(19200);                        // monitor link
   Serial3.begin(19200);                        // start usb with encoder
 
   TargetAzimuth =  getCurrentAzimuth();        // uses Serial3
@@ -150,6 +157,7 @@ void loop()
 {
 
   // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
+
 
   if (Serial.available() > 0)                              // when serial data arrives from the driver on USB capture it into a string
   {
@@ -209,6 +217,8 @@ void loop()
 
     if (receivedData.indexOf("SA", 0) > -1) //
     {
+      
+      PowerOn();                   //turn on the power supply for the stepper motor
       // strip off 1st 2 chars
       receivedData.remove(0, 2);
 
@@ -254,7 +264,7 @@ void loop()
 
     //*************************************************************************
     // ******** code for SL process below *************************************
-    //**** example of data sent by driver SL220.00#  **************************
+    //**** example of data sent by driver SL#  **************************
     //*************************************************************************
     //
 
@@ -297,6 +307,9 @@ void loop()
 
       UpdateThelcdPanel();
 
+
+      // CHECK HERE IF Serial1 is available - request from monitor program
+
       pkstart = millis();
 
     }
@@ -317,12 +330,13 @@ void loop()
     // lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
     //  lcdprint(0, 2, lcdblankline);
 
+    PowerOff();                                // power off the stepper
 
   }
   else
   {
     movementstate  = "Moving";              // for updating the lcdpanel
-    TargetMessage = "Distance to go ";
+    TargetMessage = "Awaiting Target ";
     stepper.run();
   }
 
@@ -342,7 +356,8 @@ void Emergency_Stop(float azimuth, String mess)
   lcdprint(0, 0, "Stopped");
   lcdprint(0, 1, mess);
 
-
+  // todo turn off power to the stepper
+  PowerOff();
 }
 
 void lcdprint(int col, int row, String mess)
@@ -362,11 +377,11 @@ String WhichDirection()
 
   if (DiffMod >= 180)
   {
-    dir = "clockwise"; // the clockwise case
+    dir = "clockwise";      // the increasing Azimuth case
   }
   else
   {
-    dir = "anticlockwise";  //counerclockwise}
+    dir = "anticlockwise";  // the decreasing Azimuth case
   }
 
   return dir;
@@ -458,7 +473,21 @@ float getCurrentAzimuth()
 
 void UpdateThelcdPanel()
 {
-
+  /*
+  if (Serial1.available() > 0)        // serial 1 is the monitor program link
+  {
+  String MonitorRequest ="";
+  MonitorRequest=  Serial1.readStringUntil('#');
+  if (MonitorRequest.indexOf("Ping", 0) > -1)     
+  {
+   // Serial.print("sending");
+    SendToMonitor();
+   // Serial.println("sent");
+  }
+  
+  }
+  */
+  // this sends the data to the monitor program
 
   // for the new Arduino Monitor Winforms app, include 'EncoderReplyCounter' in the update
 
@@ -470,7 +499,7 @@ void UpdateThelcdPanel()
   //lcdprint(0,  2, lcdblankline);
   //lcdprint(0,  3, lcdblankline);
 
-
+  SendToMonitor();
   lcdprint(0,  0, "Goto request        ");
   stepper.run();
   lcdprint(15, 0, String(int(TargetAzimuth)));
@@ -478,13 +507,23 @@ void UpdateThelcdPanel()
 
   lcdprint(0,  1, "Status:  " + movementstate);
   stepper.run();
+
   lcdprint(7,  2, QueryDir);
   stepper.run();
 
   lcdprint(0, 3, TargetMessage);
   stepper.run();
   lcdprint(16, 3, "   ");
-  lcdprint(16, 3,  String(AngleMod360() ) );
+  if (QueryDir =="clockwise")
+    {
+      lcdprint(16, 3,  String(360 - AngleMod360() ) );    // try this to check if the distance to go is correct
+    }
+    else
+    {
+
+      lcdprint(16, 3,  String(AngleMod360() ) );    // try this to check if the distance to go is correct 
+    }
+  
 
   stepper.run();
 
@@ -514,4 +553,52 @@ int AngleMod360()
 
   return Modresult;
 }
-//
+
+void SendToMonitor()
+{
+
+ // Serial.println("START#");
+ // Serial.println(String(int(TargetAzimuth))   + '#');
+ // Serial.println(movementstate                + '#');
+ // Serial.println(QueryDir                     + '#');
+ // Serial.println(TargetMessage                + '#');
+    
+ // Serial.println(String(EncoderReplyCounter)  + '#');
+
+
+  Serial1.print("START#");
+  Serial1.print(String(int(TargetAzimuth))   + '#');
+  Serial1.print(movementstate                + '#');
+  Serial1.print(QueryDir                     + '#');
+  Serial1.print(TargetMessage                + '#');
+  if (QueryDir =="clockwise")
+  {
+    Serial1.print(String(360 - AngleMod360() )       + '#'); 
+    //Serial.println(String(AngleMod360())        + '#');        // note this is a test print from the block above and is serial not serial1
+  }
+  else   //querydir is anticlockwise
+  {
+  Serial1.print(String(AngleMod360() )       + '#');         
+  }
+  Serial1.print(String(EncoderReplyCounter)  + '#');
+  /*
+  list of data need by the monitor program
+  targetazimuth
+  movementstate
+  querydir
+  targetmessage
+  anglemod360
+  encoderreplycounter
+  */
+}
+void PowerOn()                          // set the power SSR gate high
+{
+digitalWrite(power_pin,      HIGH);
+
+delay(2000);                            // gives time for the MA860H unit to power on and stabilise
+}
+
+void PowerOff()                         // set the power SSR gate low
+{
+digitalWrite(power_pin,      LOW);
+}
