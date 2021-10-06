@@ -132,7 +132,7 @@ void setup()
   // Serial.println (TargetAzimuth);
   delay(2000);
 
-  Serial.begin(19200) ;                        // start serial ports - usb with PC
+  Serial.begin(19200) ;                        // start serial ports - usb with PC - rx0 tx0 and updi
   Serial1.begin(19200);                        // monitor link
   Serial3.begin(19200);                        // start usb with encoder
 
