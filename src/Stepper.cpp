@@ -65,14 +65,14 @@ void   PowerOff();
 
 
 // define the DC power control pin which is used to drive the gate of the solid state relay
-#define power_pin             9        //checked and is free on the MCU board
+#define power_pin             7        
 
 // Define a stepper and the pins it will use
 
 // pin definitions for step, dir and enable
 
-#define                stepPin 7
-#define                dirPin  8
+#define                stepPin 11
+#define                dirPin  10
 
 
 //liquid crystal two lines below
