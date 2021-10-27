@@ -42,18 +42,22 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 //SL# - Slew status request
 //
 // The routine drives the stepper motor to move the Dome
-// It acquires the current azimuth via hardware serial3 from the encoder
+// It acquires the current azimuth via hardware serial from the encoder
 
 
 #include <arduino.h>
 #include <AccelStepper.h>
-#include <LiquidCrystal.h>  // this is the new Liquid Crystal library installed on Dev and Observatory 18-2-20
+
 #include <Wire.h>
 
 //Forward declarations
 void   Emergency_Stop(float azimuth, String mess);
 void   lcdprint(int col, int row, String mess);
 String WhichDirection();
+//todo remove the linebelow which was for testing
+String globalreceipt;
+
+
 void   WithinFiveDegrees();
 float  getCurrentAzimuth();
 void   UpdateThelcdPanel();
@@ -73,11 +77,14 @@ void   PowerOff();
 
 #define                stepPin 11
 #define                dirPin  10
-
+// meaningful names for the serial ports
+#define Monitor Serial2
+#define ASCOM   Serial
+#define Encoder Serial1
 
 //liquid crystal two lines below
-const int rs = 27, en = 26, d4 = 25, d5 = 24, d6 = 23, d7 = 22;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+//const int rs = 27, en = 26, d4 = 25, d5 = 24, d6 = 23, d7 = 22;
+//LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 
 //CREATE INSTANCE OF STEPPER MOTOR
@@ -114,8 +121,8 @@ String  pkversion = "5.0";
 void setup()
 {
 
-  // put your setup code here, to run once:
-  pinMode(15, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial3 Rx pin to 5v.
+  //  changed the following line for the 4809 context 
+  pinMode(13, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial Rx pin to 5v.
 
 
   // It transformed the workings of the serial link to the encoder
@@ -141,10 +148,10 @@ void setup()
   DoTheDeceleration = true;      // used to set deceleration towards target azimuth
   pkstart           = millis();
 
-  lcd.begin(20, 4);                      // 20 columns x 4 rows
-  lcd.clear();
-  lcdprint(0, 0, "MCU-stepper Ready");
-  lcdprint(0, 1, "Version " +  pkversion);
+  //lcd.begin(20, 4);                      // 20 columns x 4 rows
+  //lcd.clear();
+  //lcdprint(0, 0, "MCU-stepper Ready");
+  //lcdprint(0, 1, "Version " +  pkversion);
 
   //Serial.println("The target is about to be initialised ");
 
@@ -158,11 +165,11 @@ void setup()
   // Serial.println (TargetAzimuth);
   delay(2000);
 
-  Serial.begin(19200) ;                        // start serial ports - usb with PC - rx0 tx0 and updi
-  Serial1.begin(19200);                        // monitor link
-  Serial3.begin(19200);                        // start usb with encoder
+  ASCOM.begin(19200) ;                        // start serial ports ASCOM driver - usb with PC - rx0 tx0 and updi
+  Encoder.begin(19200);                        // Link with the Encoder MCU
+  Monitor.begin(19200);                        // serial with the Monitor program
 
-  TargetAzimuth =  getCurrentAzimuth();        // uses Serial3
+  TargetAzimuth =  getCurrentAzimuth();        // 
 
   // Serial.println(F_CPU);    // print the cpu speed
 
@@ -183,10 +190,10 @@ void loop()
   // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
 
 
-  if (Serial.available() > 0)                              // when serial data arrives from the driver on USB capture it into a string
+  if (ASCOM.available() > 0)                              // when serial data arrives from the driver on USB capture it into a string
   {
 
-    receivedData = Serial.readStringUntil('#');          // read a string from PC serial port usb
+    receivedData = ASCOM.readStringUntil('#');          // read a string from PC serial port usb
 
     /*
         if (receivedData.startsWith("TEST", 0))
@@ -226,7 +233,7 @@ void loop()
 
     if (receivedData.indexOf("ES", 0) > -1)               // Emergency stop requested from C# driver
     {
-      lcd.clear();
+      //lcd.clear();
       Emergency_Stop(CurrentAzimuth, "Received ES");
       receivedData = "";
     }                                                   // end Emergency Stop
@@ -299,13 +306,17 @@ void loop()
 
       if (SlewStatus)
       {
-        Serial.print("Moving#");
+        ASCOM.print("Moving#" );
+        //todo remove the line below
+        ASCOM.println(globalreceipt);
         // Serial.println("#");
 
       }
       else
       {
-        Serial.print("Notmoving#");               // sent to serial USB and picked up by the driver
+        ASCOM.print("Notmoving#");             // sent to serial USB and picked up by the driver
+        //todo remove the line below
+        ASCOM.println(globalreceipt);
         // Serial.println("#");
 
       }
@@ -332,7 +343,7 @@ void loop()
       UpdateThelcdPanel();
 
 
-      // CHECK HERE IF Serial1 is available - request from monitor program
+      // CHECK HERE IF Monitor Serial is available - request from monitor program
 
       pkstart = millis();
 
@@ -376,9 +387,9 @@ void Emergency_Stop(float azimuth, String mess)
   SlewStatus = false;
 
 
-  lcdprint(0, 0, lcdblankline);
-  lcdprint(0, 0, "Stopped");
-  lcdprint(0, 1, mess);
+ // lcdprint(0, 0, lcdblankline);
+ // lcdprint(0, 0, "Stopped");
+ // lcdprint(0, 1, mess);
 
   // todo turn off power to the stepper
   PowerOff();
@@ -386,9 +397,9 @@ void Emergency_Stop(float azimuth, String mess)
 
 void lcdprint(int col, int row, String mess)
 {
-  //lcd.clear();
-  lcd.setCursor(col, row);
-  lcd.print(mess);
+  // lcd.clear();
+ // lcd.setCursor(col, row);
+  // lcd.print(mess);
 
 }
 
@@ -471,12 +482,14 @@ float getCurrentAzimuth()
   while (validaz == false)
   {
 
-    Serial3.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
+    Encoder.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
 
-    if (Serial3.available() > 0)                       // when serial data arrives capture it into a string
+    if (Encoder.available() > 0)                       // when serial data arrives capture it into a string
     {
 
-      String receipt = Serial3.readStringUntil('#');   // read a string from the encoder
+      String receipt = Encoder.readStringUntil('#');   // read a string from the encoder
+      //TODO REMOVE THE LINE BELOW WHICH WAS FOR TESTING
+      globalreceipt= receipt;
       az = receipt.toFloat();                          // convert
 
       if (  (az > 0) && (az <= 360) )
@@ -497,6 +510,9 @@ float getCurrentAzimuth()
 
 void UpdateThelcdPanel()
 {
+
+SendToMonitor();
+
   /*
   if (Serial1.available() > 0)        // serial 1 is the monitor program link
   {
@@ -516,29 +532,29 @@ void UpdateThelcdPanel()
   // for the new Arduino Monitor Winforms app, include 'EncoderReplyCounter' in the update
 
 
-  stepper.run();
+  //stepper.run();
   // update lcd panel
   //lcdprint(0,  0, lcdblankline);
   //lcdprint(0,  1, lcdblankline);
   //lcdprint(0,  2, lcdblankline);
   //lcdprint(0,  3, lcdblankline);
 
-  SendToMonitor();
-  lcdprint(0,  0, "Goto request        ");
-  stepper.run();
-  lcdprint(15, 0, String(int(TargetAzimuth)));
-  stepper.run();
+  
+  //lcdprint(0,  0, "Goto request        ");
+  //stepper.run();
+  //lcdprint(15, 0, String(int(TargetAzimuth)));
+  //stepper.run();
 
-  lcdprint(0,  1, "Status:  " + movementstate);
-  stepper.run();
+  //lcdprint(0,  1, "Status:  " + movementstate);
+  //stepper.run();
 
-  lcdprint(7,  2, QueryDir);
-  stepper.run();
+  //lcdprint(7,  2, QueryDir);
+  //stepper.run();
 
-  lcdprint(0, 3, TargetMessage);
-  stepper.run();
-  lcdprint(16, 3, "   ");
-  if (QueryDir =="clockwise")
+  //lcdprint(0, 3, TargetMessage);
+  //stepper.run();
+  //lcdprint(16, 3, "   ");
+  /*if (QueryDir =="clockwise")
     {
       lcdprint(16, 3,  String(360 - AngleMod360() ) );    // try this to check if the distance to go is correct
     }
@@ -550,7 +566,7 @@ void UpdateThelcdPanel()
   
 
   stepper.run();
-
+*/
 }
 int AngleMod360()
 {
@@ -590,21 +606,21 @@ void SendToMonitor()
  // Serial.println(String(EncoderReplyCounter)  + '#');
 
 
-  Serial1.print("START#");
-  Serial1.print(String(int(TargetAzimuth))   + '#');
-  Serial1.print(movementstate                + '#');
-  Serial1.print(QueryDir                     + '#');
-  Serial1.print(TargetMessage                + '#');
+  Monitor.print("START#");
+  Monitor.print(String(int(TargetAzimuth))   + '#');
+  Monitor.print(movementstate                + '#');
+  Monitor.print(QueryDir                     + '#');
+  Monitor.print(TargetMessage                + '#');
   if (QueryDir =="clockwise")
   {
-    Serial1.print(String(360 - AngleMod360() )       + '#'); 
+    Monitor.print(String(360 - AngleMod360() )       + '#'); 
     //Serial.println(String(AngleMod360())        + '#');        // note this is a test print from the block above and is serial not serial1
   }
   else   //querydir is anticlockwise
   {
-  Serial1.print(String(AngleMod360() )       + '#');         
+  Monitor.print(String(AngleMod360() )       + '#');         
   }
-  Serial1.print(String(EncoderReplyCounter)  + '#');
+  Monitor.print(String(EncoderReplyCounter)  + '#');
   /*
   list of data need by the monitor program
   targetazimuth
