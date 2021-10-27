@@ -620,9 +620,24 @@ void SendToMonitor()
   Monitor.print(movementstate                + '#');
   Monitor.print(QueryDir                     + '#');
   Monitor.print(TargetMessage                + '#');
-  if (QueryDir =="clockwise")
+  if (QueryDir =="clockwise")            // see google sheets for the distance to target formula -Target Azimuth Scenarios
   {
+
+    // try testing the if stmt below to stop the Monitor program showing distance to go = 360 if there's a slight overun of the dome
+    // note the todo at the end of the if clause if bringing the if - else statement into use
+/*
+    if (  (360-AngleMod360()) < 1 )
+    {
+      Monitor.print("0");
+    }
+    else
+    {
     Monitor.print(String(360 - AngleMod360() )       + '#'); 
+    }
+  */
+  //todo remove the line below if using the if statement above
+  Monitor.print(String(360 - AngleMod360() )       + '#'); 
+  
     //Serial.println(String(AngleMod360())        + '#');        // note this is a test print from the block above and is serial not serial1
   }
   else   //querydir is anticlockwise
