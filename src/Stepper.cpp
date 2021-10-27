@@ -113,7 +113,7 @@ String  QueryDir ="No Direction";
 String  movementstate;
 String  pkversion = "5.0";
 //TODO REMOVE THE LINE BELOW - TESTING ONLY
-String globalreceipt= "3";
+//String globalreceipt= "3";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -172,13 +172,13 @@ void setup()
   Monitor.begin(19200);                        // serial with the Monitor program
 
   //todo remove 3 lines below
-  delay(25000);
-ASCOM.print(globalreceipt);
-ASCOM.println(" ");
+ // delay(25000);   //this gives time to get to the serial port - as the 4809 does not reset on sermon start
+//ASCOM.print(globalreceipt);
+//ASCOM.println(" ");
   TargetAzimuth =  getCurrentAzimuth();        // 
   //todo remove 2 lines below
-ASCOM.print(globalreceipt);
-ASCOM.println(" ");
+//ASCOM.print(globalreceipt);
+//ASCOM.println(" ");
   // Serial.println(F_CPU);    // print the cpu speed
 
 
@@ -316,7 +316,7 @@ void loop()
       {
         ASCOM.print("Moving#" );
         //todo remove the line below
-        ASCOM.println(globalreceipt);
+      //ASCOM.println(globalreceipt);
         // Serial.println("#");
 
       }
@@ -324,7 +324,7 @@ void loop()
       {
         ASCOM.print("Notmoving#");             // sent to serial USB and picked up by the driver
         //todo remove the line below
-        ASCOM.println(globalreceipt);
+       // ASCOM.println(globalreceipt);
         // Serial.println("#");
 
       }
@@ -491,13 +491,14 @@ float getCurrentAzimuth()
   {
 
     Encoder.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
-
+//todo evaluate new line below
+    delay(100);  //Some testing showed this line improves reliability of the send /receive cycle
     if (Encoder.available() > 0)                       // when serial data arrives capture it into a string
     {
 
       String receipt = Encoder.readStringUntil('#');   // read a string from the encoder
       //TODO REMOVE THE LINE BELOW WHICH WAS FOR TESTING
-      globalreceipt= receipt;
+      //globalreceipt= receipt;
       az = receipt.toFloat();                          // convert
 
       if (  (az > 0) && (az <= 360) )
