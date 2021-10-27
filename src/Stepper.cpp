@@ -55,7 +55,7 @@ void   Emergency_Stop(float azimuth, String mess);
 void   lcdprint(int col, int row, String mess);
 String WhichDirection();
 //todo remove the linebelow which was for testing
-String globalreceipt;
+
 
 
 void   WithinFiveDegrees();
@@ -112,6 +112,8 @@ String  TargetMessage = lcdblankline;
 String  QueryDir ="No Direction";
 String  movementstate;
 String  pkversion = "5.0";
+//TODO REMOVE THE LINE BELOW - TESTING ONLY
+String globalreceipt= "3";
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -122,7 +124,7 @@ void setup()
 {
 
   //  changed the following line for the 4809 context 
-  pinMode(13, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial Rx pin to 5v.
+  pinMode(9, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial Rx pin to 5v.
 
 
   // It transformed the workings of the serial link to the encoder
@@ -169,8 +171,14 @@ void setup()
   Encoder.begin(19200);                        // Link with the Encoder MCU
   Monitor.begin(19200);                        // serial with the Monitor program
 
+  //todo remove 3 lines below
+  delay(25000);
+ASCOM.print(globalreceipt);
+ASCOM.println(" ");
   TargetAzimuth =  getCurrentAzimuth();        // 
-
+  //todo remove 2 lines below
+ASCOM.print(globalreceipt);
+ASCOM.println(" ");
   // Serial.println(F_CPU);    // print the cpu speed
 
 
