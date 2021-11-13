@@ -2,32 +2,15 @@
 
 Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
-This is the Merged-Box-Stepper branch
+This is the Merged-Box-Stepper 
+This is the Merged-Box-Stepper 
+This is the Merged-Box-Stepper 
+
 
 Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 */
 
 
-
-
-
-
-
-// This code is the current software loaded on the Stepper MCU - Last upload 9-9-21 from dev m/c
-//USes the new faster LCD Library:
-// https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home#!usage
-//the above has good setup info for backlight and contrast analogue pins
 //
 //see this sheets URL for values related to deceleration used to inform values in this code
 // https://docs.google.com/spreadsheets/d/1IBvHXLke9fBvjETHgyCWAYHGpPX9WbbuqvsiXYv9Ix0/edit#gid=0
