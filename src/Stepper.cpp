@@ -19,7 +19,7 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
 //
 //ES# - emergency stop
-//SA999.99# - Slew to azimuth
+//SA999# - Slew to azimuth
 //SL# - Slew status request
 //
 // The routine drives the stepper motor to move the Dome
@@ -28,6 +28,7 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 
 #include <Arduino.h>
 #include <AccelStepper.h>
+#include "linkedList.h"
 
 #include <Wire.h>
 
@@ -69,7 +70,7 @@ void   PowerOff();
 AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 
 String  receivedData;
-int   TargetAzimuth, CurrentAzimuth;
+//int     TargetAzimuth, CurrentAzimuth;   // these are now defined as extern in the linkedList.h file
 boolean DoTheDeceleration;
 boolean SlewStatus;             // controls whether the stepper is stepped in the main loop
 float   StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
@@ -88,7 +89,7 @@ String  lcdblankline = "                    ";  //twenty spaces to blank lcd dis
 String  TargetMessage = lcdblankline;
 String  QueryDir ="No Direction";
 String  movementstate;
-String  pkversion = "5.0";
+String  pkversion = "6.0";
 
 
 /*
@@ -353,23 +354,17 @@ void lcdprint(int col, int row, String mess)
 
 }
 
-String WhichDirection()
-{ // this routine decides which direction to go based on the difference betwen current and target azimuth
-  int DiffMod;
-  String dir ;
+String WhichDirection(){ 
+  // this routine decides which direction to go based on the difference betwen current and target azimuth
 
-  DiffMod = AngleMod360();
 
-  if (DiffMod >= 180)
-  {
-    dir = "clockwise";      // the increasing Azimuth case
-  }
-  else
-  {
-    dir = "anticlockwise";  // the decreasing Azimuth case
-  }
+//get the current azimuth
+  CurrentAzimuth = getCurrentAzimuth();
+  calculateClockwiseSteps();
+  calculateAnticlockwiseSteps();
+  String direction = movementDirection();
 
-  return dir;
+  return direction;
   // code above optimises movement to take the shortest distance
   // Serial.print("which direct ? dir is ");
   // Serial.println(dir);
@@ -518,6 +513,8 @@ SendToMonitor();
   stepper.run();
 */
 }
+
+
 int AngleMod360()
 {
   // This routine looks at the current azimuth and the target azimuth and returns a value which is the difference modulo 360
