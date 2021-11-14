@@ -2,9 +2,7 @@
 
 Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 
-This is the Merged-Box-Stepper 
-This is the Merged-Box-Stepper 
-This is the Merged-Box-Stepper 
+This is the Linked-List-Merged-Box version - undergoing changes to incorporate the linked list
 
 
 Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
@@ -28,7 +26,7 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 // It acquires the current azimuth via hardware serial from the encoder
 
 
-#include <arduino.h>
+#include <Arduino.h>
 #include <AccelStepper.h>
 
 #include <Wire.h>
@@ -37,12 +35,8 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 void   Emergency_Stop(float azimuth, String mess);
 void   lcdprint(int col, int row, String mess);
 String WhichDirection();
-
-
-
-
 void   WithinFiveDegrees();
-float  getCurrentAzimuth();
+int    getCurrentAzimuth();
 void   UpdateThelcdPanel();
 int    AngleMod360();
 void   SendToMonitor();
@@ -69,13 +63,13 @@ void   PowerOff();
 //const int rs = 27, en = 26, d4 = 25, d5 = 24, d6 = 23, d7 = 22;
 //LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-
+//
 //CREATE INSTANCE OF STEPPER MOTOR
 
 AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 
 String  receivedData;
-float   TargetAzimuth, CurrentAzimuth;
+int   TargetAzimuth, CurrentAzimuth;
 boolean DoTheDeceleration;
 boolean SlewStatus;             // controls whether the stepper is stepped in the main loop
 float   StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
@@ -129,7 +123,7 @@ void setup()
 
   // initialise
 
-  CurrentAzimuth    = 0.0;
+  CurrentAzimuth    = 0;
   DoTheDeceleration = true;      // used to set deceleration towards target azimuth
   pkstart           = millis();
 
@@ -183,33 +177,7 @@ void loop()
 
     receivedData = ASCOM.readStringUntil('#');          // read a string from PC serial port usb
 
-    /*
-        if (receivedData.startsWith("TEST", 0))
-        {
-          lcd.setCursor(0, 0);
-          lcd.print("Test Received");
-          delay(1000);
-          lcd.clear();
-          Serial.println("Communications established, received  " + receivedData);
-          Serial.println("Target Az  is " +  String( TargetAzimuth));
-          Serial.println("Current Az is " + String( CurrentAzimuth));
-
-          Serial.println(" so a good sequence would be as follows IN THE ORDER RECEIVED FROM the driver....");
-          Serial.println("1 SL#      to check slewing");
-          Serial.println("2 SA220#   slew to azimuth request");
-          Serial.println("3 SL#      to check slewing");
-          Serial.println("4 SL#      to check slewing");
-          Serial.println("5 SL#      to check slewing etc etc");
-          Serial.println(" ");
-          Serial.println("emergency stop is ES#");
-
-
-          //
-          receivedData = "";
-        }
-    */
-
-
+    
 
     //*************************************************************************
     //******** code for ES process below **************************************
@@ -241,7 +209,7 @@ void loop()
       // strip off 1st 2 chars
       receivedData.remove(0, 2);
 
-      TargetAzimuth = receivedData.toFloat();    // store the target az for comparison with current position
+      TargetAzimuth = receivedData.toInt();    // store the target az for comparison with current position
       TargetChanged = true;
 
       //  Serial.println();
@@ -313,49 +281,49 @@ void loop()
   WithinFiveDegrees();
 
   if (SlewStatus)                    // if the slew status is true, run the stepper
-  {
-
-    stepper.run();
-
-    //update the LCD info
-    //
-    if (  (millis() - pkstart) > 1000.0  )                // half second checks for azimuth value as the dome moves
     {
 
-      UpdateThelcdPanel();
+      stepper.run();
+
+      //update the LCD info
+      //
+      if (  (millis() - pkstart) > 1000.0  )                // half second checks for azimuth value as the dome moves
+        {
+
+          UpdateThelcdPanel();
 
 
-      // CHECK HERE IF Monitor Serial is available - request from monitor program
+          // CHECK HERE IF Monitor Serial is available - request from monitor program
 
-      pkstart = millis();
+          pkstart = millis();
+
+        }
 
     }
 
-  }
-
 
   if (    abs( stepper.distanceToGo() ) < 20   )
-  {
-    SlewStatus = false;                      // used to stop the motor in main loop
-    movementstate  = "Stopped.  ";           // for updating the lcdpanel
+    {
+      SlewStatus = false;                      // used to stop the motor in main loop
+      movementstate  = "Stopped.  ";           // for updating the lcdpanel
 
-    // Serial.print("ABS STEPPER distance to go....");
-    // Serial.println();
-    //update the LCD
-    TargetMessage = "Target achieved ";
-    UpdateThelcdPanel();
-    // lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
-    //  lcdprint(0, 2, lcdblankline);
+      // Serial.print("ABS STEPPER distance to go....");
+      // Serial.println();
+      //update the LCD
+      TargetMessage = "Target achieved ";
+      UpdateThelcdPanel();
+      // lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
+      //  lcdprint(0, 2, lcdblankline);
 
-    PowerOff();                                // power off the stepper
+      PowerOff();                                // power off the stepper
 
-  }
+    }
   else
-  {
-    movementstate  = "Moving";              // for updating the lcdpanel
-    TargetMessage = "Awaiting Target ";
-    stepper.run();
-  }
+    {
+      movementstate  = "Moving";              // for updating the lcdpanel
+      TargetMessage = "Awaiting Target ";
+      stepper.run();
+    }
 
 
 
@@ -449,9 +417,9 @@ void WithinFiveDegrees()
 
 }
 
-float getCurrentAzimuth()
+int getCurrentAzimuth()
 {
-  float az;
+  int az;
 
   // test serial - not serial3 - remove this after testing
   // Serial.println();
@@ -472,7 +440,7 @@ float getCurrentAzimuth()
 
       String receipt = Encoder.readStringUntil('#');   // read a string from the encoder
      
-      az = receipt.toFloat();                          // convert
+      az = receipt.toInt();                          // convert
 
       if (  (az > 0) && (az <= 360) )
       {
@@ -564,7 +532,7 @@ int AngleMod360()
 
   CurrentAzimuth = getCurrentAzimuth();
 
-  difference = (int)(CurrentAzimuth - TargetAzimuth );
+  difference = (CurrentAzimuth - TargetAzimuth );
   part1 = (int)(difference / 360);
   if (difference < 0)
   {
@@ -589,7 +557,7 @@ void SendToMonitor()
 
 
   Monitor.print("START#");
-  Monitor.print(String(int(TargetAzimuth))   + '#');
+  Monitor.print(String(TargetAzimuth)        + '#');
   Monitor.print(movementstate                + '#');
   Monitor.print(QueryDir                     + '#');
   Monitor.print(TargetMessage                + '#');
