@@ -13,7 +13,7 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 //see this sheets URL for values related to deceleration used to inform values in this code
 // https://docs.google.com/spreadsheets/d/1IBvHXLke9fBvjETHgyCWAYHGpPX9WbbuqvsiXYv9Ix0/edit#gid=0
 
-//verion 5.0 - change the variable in setup too
+//verion 6.0 - change the variable in setup too
 //DECELVALUE AND NORMALACCELERATION LOOK GOOD
 // check the final moveto values as they may need empirical change on testing
 // This routine accepts these commands from the ASCOM Driver via USB Serial Cable:
@@ -30,19 +30,17 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 #include <AccelStepper.h>
 #include "linkedList.h"
 
-#include <Wire.h>
+//#include <Wire.h>
 
 //Forward declarations
-void   Emergency_Stop(float azimuth, String mess);
-void   lcdprint(int col, int row, String mess);
+void   Emergency_Stop(int azimuth, String mess);
 String WhichDirection();
 void   WithinFiveDegrees();
 int    getCurrentAzimuth();
-void   UpdateThelcdPanel();
-int    AngleMod360();
 void   SendToMonitor();
 void   PowerOn();
 void   PowerOff();
+int    distanceToTarget();
 // end declarations
 
 
@@ -60,17 +58,11 @@ void   PowerOff();
 #define ASCOM   Serial
 #define Encoder Serial1
 
-//liquid crystal two lines below
-//const int rs = 27, en = 26, d4 = 25, d5 = 24, d6 = 23, d7 = 22;
-//LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-
-//
 //CREATE INSTANCE OF STEPPER MOTOR
 
 AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 
 String  receivedData;
-//int     TargetAzimuth, CurrentAzimuth;   // these are now defined as extern in the linkedList.h file
 boolean DoTheDeceleration;
 boolean SlewStatus;             // controls whether the stepper is stepped in the main loop
 float   StepsPerSecond;         // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
@@ -85,11 +77,11 @@ int     EncoderReplyCounter         = 0;
 long    pkstart                     = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
 
 
-String  lcdblankline = "                    ";  //twenty spaces to blank lcd display lines
-String  TargetMessage = lcdblankline;
-String  QueryDir ="No Direction";
-String  movementstate;
-String  pkversion = "6.0";
+
+String  TargetMessage = "";
+String  QueryDir      ="No Direction";
+String  movementstate = "Not Moving";
+String  pkversion     = "6.0";
 
 
 /*
@@ -102,58 +94,34 @@ void setup()
 {
 
   //  changed the following line for the 4809 context 
-  pinMode(9, INPUT_PULLUP);                   // see the notes in github. this pulls up the serial Rx pin to 5v.
+  pinMode(9, INPUT_PULLUP);                     // see the notes in github. this pulls up the serial Rx pin to 5v.
 
-
-  // It transformed the workings of the serial link to the encoder
   stepper.stop();                               // set initial state as stopped
+
   // Change below to suit the stepper
 
-  SlewStatus = false;
-  StepsPerSecond = 300.0;                       // changed following empirical testing Oct 2020
-  normalAcceleration = 140.0;                    // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
+  SlewStatus         = false;
+  StepsPerSecond     = 300.0;                   // changed following empirical testing Oct 2020
+  normalAcceleration = 140.0;                   // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
   stepper.setMaxSpeed(StepsPerSecond);          // steps per second see below -
   stepper.setCurrentPosition(0);
   stepper.setAcceleration(normalAcceleration);  // steps per second per second.
   // Note V= acceleration * time, so a vlue of e.g. 1 step /s/s takes 10 secs to reach maxspeed of 10 or 15 secs to reach maxspeed 15 etc
   //
-  // see how the speed of 15 goes empirically
-  // with a 10 cm diameter drive wheel on the shaft, calculations show 20 shaft rotations
-  // are required to move the dome through approx one revolution and this works out to be 27600 steps for one dome rotation
-
-
+  
   // initialise
 
   CurrentAzimuth    = 0;
   DoTheDeceleration = true;      // used to set deceleration towards target azimuth
   pkstart           = millis();
 
-  //lcd.begin(20, 4);                      // 20 columns x 4 rows
-  //lcd.clear();
-  //lcdprint(0, 0, "MCU-stepper Ready");
-  //lcdprint(0, 1, "Version " +  pkversion);
-
-  //Serial.println("The target is about to be initialised ");
-
-
-
-
-  // Serial.print("The value of getcurrentazimuth function is  ");
-  // Serial.println (getCurrentAzimuth(CurrentAzimuth));
-
-  //Serial.print("The target has been initialised to ");
-  // Serial.println (TargetAzimuth);
-  delay(2000);
+  delay(2000);                      //why? no original comment is unhelpful
 
   ASCOM.begin(19200) ;                        // start serial ports ASCOM driver - usb with PC - rx0 tx0 and updi
   Encoder.begin(19200);                        // Link with the Encoder MCU
   Monitor.begin(19200);                        // serial with the Monitor program
 
   
- 
-
-
-
   TargetAzimuth =  getCurrentAzimuth();        // 
   
 
@@ -222,27 +190,23 @@ void loop()
         SlewStatus = true;
         stepper.setAcceleration(normalAcceleration);      // set the acceleration
         stepper.setCurrentPosition(0);                    // initialise the stepper position
-        QueryDir = WhichDirection();                         // work out which direction of travle is optimum
+        QueryDir = WhichDirection();                      // work out which direction of travle is optimum
 
         if (QueryDir == "clockwise")
         {
-          // Serial.println("setting stepper target position to 100000");
+          
           stepper.moveTo(100000);                         // positive number means clockwise in accelstepper library
 
         }
 
         if (QueryDir == "anticlockwise")
         {
-          //  Serial.println("setting stepper target position to -100000");
+          
           stepper.moveTo(-100000);                      // negative is anticlockwise in accelstepper library
 
         }
-        // Serial.print("in slewto azimuth querydir is ");
-        // Serial.print(QueryDir);
-
+        
         DoTheDeceleration = true;
-
-
 
         receivedData = "";
 
@@ -259,8 +223,7 @@ void loop()
     if (receivedData.indexOf("SL", 0) > -1) //
 
     {
-      //send true or false
-
+      
       if (SlewStatus)
       {
         ASCOM.print("Moving#" );
@@ -268,7 +231,7 @@ void loop()
       }
       else
       {
-        ASCOM.print("Notmoving#");             // sent to serial USB and picked up by the driver
+        ASCOM.print("Notmoving#");             // sent to ASCOM serial and picked up by the ASCOM driver
         
       }
       receivedData = "";
@@ -291,7 +254,7 @@ void loop()
       if (  (millis() - pkstart) > 1000.0  )                // half second checks for azimuth value as the dome moves
         {
 
-          UpdateThelcdPanel();
+          SendToMonitor();
 
 
           // CHECK HERE IF Monitor Serial is available - request from monitor program
@@ -305,18 +268,17 @@ void loop()
 
   if (    abs( stepper.distanceToGo() ) < 20   )
     {
-      SlewStatus = false;                      // used to stop the motor in main loop
-      movementstate  = "Stopped.  ";           // for updating the lcdpanel
+      SlewStatus     = false;                      // used to stop the motor in main loop
+      movementstate  = "Stopped.  ";               // for updating the lcdpanel
 
       // Serial.print("ABS STEPPER distance to go....");
       // Serial.println();
       //update the LCD
       TargetMessage = "Target achieved ";
-      UpdateThelcdPanel();
-      // lcdprint(0, 3, "Target achieved     "); // update the LCD with the good news
-      //  lcdprint(0, 2, lcdblankline);
 
-      PowerOff();                                // power off the stepper
+      SendToMonitor();
+     
+      PowerOff();                                // power off the stepper now that the target is reached.
 
     }
   else
@@ -331,45 +293,30 @@ void loop()
 } // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void Emergency_Stop(float azimuth, String mess)
+void Emergency_Stop(int azimuth, String mess)
 {
 
   stepper.stop();
   SlewStatus = false;
 
-
- // lcdprint(0, 0, lcdblankline);
- // lcdprint(0, 0, "Stopped");
- // lcdprint(0, 1, mess);
-
   // turn off power to the stepper
   PowerOff();
 }
 
-void lcdprint(int col, int row, String mess)
-{
-  // lcd.clear();
- // lcd.setCursor(col, row);
-  // lcd.print(mess);
-
-}
 
 String WhichDirection(){ 
-  // this routine decides which direction to go based on the difference betwen current and target azimuth
+  // this routine decides the shortest direction to go based on the difference betwen current and target azimuth
+  // optimises battery use by the motor.
 
 
-//get the current azimuth
-  CurrentAzimuth = getCurrentAzimuth();
+
+  CurrentAzimuth = getCurrentAzimuth();   // this comes from the encoder 
   calculateClockwiseSteps();
   calculateAnticlockwiseSteps();
-  String direction = movementDirection();
+  String direction = movementDirection();   //whichever is the smallest number of steps informs the direction to target
 
   return direction;
-  // code above optimises movement to take the shortest distance
-  // Serial.print("which direct ? dir is ");
-  // Serial.println(dir);
-
-  //delay (1000);   // remove for test only
+  
 }
 
 void WithinFiveDegrees()
@@ -382,46 +329,33 @@ void WithinFiveDegrees()
 
     if (     (abs(CurrentAzimuth - TargetAzimuth) < 5)    && (TargetChanged == true)   )                       // within 5 degrees of target
     {
-      //Serial.println("Test of how many calls to LESS than 5 degrees ");
+      
       DoTheDeceleration = false;
       if (QueryDir == "clockwise")
       {
         // set the moveto position to allow 100 steps more for deceleration  +ve for clockwise -ve for anticclock
-        //    stepper.setCurrentPosition(0);
+        
         stepper.moveTo(stepper.currentPosition() + DecelValue); //FROM MA860H Datasheet @0.225 step angle, it requires 1600 steps per rotation
         //of the stepper drive wheel, so 1000 is 0.6 of a rotation
-        //  Serial.println();
-        //  Serial.print("stepper clockwise decel pos is ");
-        //  Serial.println(stepper.currentPosition() + 50);
-        //  Serial.println();
+        
       }
 
       if (QueryDir == "anticlockwise")
       {
         //  stepper.setCurrentPosition(0);
         stepper.moveTo(stepper.currentPosition() - DecelValue);             // check this by printing out current position is it negative?
-        //  Serial.println();
-        //  Serial.print("stepper anticlockwise decel pos is ");
-        //  Serial.println(stepper.currentPosition() - 50);
-        //  Serial.println();
+        
       }
     }
 
   }
-
 
 }
 
 int getCurrentAzimuth()
 {
   int az;
-
-  // test serial - not serial3 - remove this after testing
-  // Serial.println();
-  // Serial.print ( "Sent AZ# to the encoder and got back ");    // remove after test
-
-
-  //
+  
   boolean validaz = false;
 
   while (validaz == false)
@@ -437,7 +371,7 @@ int getCurrentAzimuth()
      
       az = receipt.toInt();                          // convert
 
-      if (  (az > 0) && (az <= 360) )
+      if (  (az > 0) && (az <= 359) )
       {
         validaz = true;
         EncoderReplyCounter ++ ;                       // A counter used to indicate whether the encoder has replied with a valid azimuth
@@ -453,135 +387,20 @@ int getCurrentAzimuth()
   return az;
 }   // end getCurrentAzimuth()
 
-void UpdateThelcdPanel()
-{
-
-SendToMonitor();
-
-  /*
-  if (Serial1.available() > 0)        // serial 1 is the monitor program link
-  {
-  String MonitorRequest ="";
-  MonitorRequest=  Serial1.readStringUntil('#');
-  if (MonitorRequest.indexOf("Ping", 0) > -1)     
-  {
-   // Serial.print("sending");
-    SendToMonitor();
-   // Serial.println("sent");
-  }
-  
-  }
-  */
-  // this sends the data to the monitor program
-
-  // for the new Arduino Monitor Winforms app, include 'EncoderReplyCounter' in the update
 
 
-  //stepper.run();
-  // update lcd panel
-  //lcdprint(0,  0, lcdblankline);
-  //lcdprint(0,  1, lcdblankline);
-  //lcdprint(0,  2, lcdblankline);
-  //lcdprint(0,  3, lcdblankline);
-
-  
-  //lcdprint(0,  0, "Goto request        ");
-  //stepper.run();
-  //lcdprint(15, 0, String(int(TargetAzimuth)));
-  //stepper.run();
-
-  //lcdprint(0,  1, "Status:  " + movementstate);
-  //stepper.run();
-
-  //lcdprint(7,  2, QueryDir);
-  //stepper.run();
-
-  //lcdprint(0, 3, TargetMessage);
-  //stepper.run();
-  //lcdprint(16, 3, "   ");
-  /*if (QueryDir =="clockwise")
-    {
-      lcdprint(16, 3,  String(360 - AngleMod360() ) );    // try this to check if the distance to go is correct
-    }
-    else
-    {
-
-      lcdprint(16, 3,  String(AngleMod360() ) );    // try this to check if the distance to go is correct 
-    }
-  
-
-  stepper.run();
-*/
-}
-
-
-int AngleMod360()
-{
-  // This routine looks at the current azimuth and the target azimuth and returns a value which is the difference modulo 360
-  // the reason this is coded is that it gives a different result from C++'s MOD function.
-  // See google sheets for the derivation algoritm - the sheet is called Target Azimuth Scenarios.
-
-  int difference = 0;
-  int part1 = 0;
-  int part2 = 0;
-  int Modresult = 0;
-
-
-  CurrentAzimuth = getCurrentAzimuth();
-
-  difference = (CurrentAzimuth - TargetAzimuth );
-  part1 = (int)(difference / 360);
-  if (difference < 0)
-  {
-    part1 = -1;
-  }
-  part2 = part1 * 360;
-  Modresult  = difference - part2;
-
-  return Modresult;
-}
 
 void SendToMonitor()
 {
-
- // Serial.println("START#");
- // Serial.println(String(int(TargetAzimuth))   + '#');
- // Serial.println(movementstate                + '#');
- // Serial.println(QueryDir                     + '#');
- // Serial.println(TargetMessage                + '#');
-    
- // Serial.println(String(EncoderReplyCounter)  + '#');
-
 
   Monitor.print("START#");
   Monitor.print(String(TargetAzimuth)        + '#');
   Monitor.print(movementstate                + '#');
   Monitor.print(QueryDir                     + '#');
   Monitor.print(TargetMessage                + '#');
-  if (QueryDir =="clockwise")            // see google sheets for the distance to target formula -Target Azimuth Scenarios
-  {
-
-    // try testing the if stmt below to stop the Monitor program showing distance to go = 360 if there's a slight overun of the dome
-    // note the todo at the end of the if clause if bringing the if - else statement into use
-/*
-    if (  (360-AngleMod360()) < 1 )
-    {
-      Monitor.print("0");
-    }
-    else
-    {
-    Monitor.print(String(360 - AngleMod360() )       + '#'); 
-    }
-  */
-  //todo remove the line below if using the if statement above
-  Monitor.print(String(360 - AngleMod360() )       + '#'); 
-  
-    //Serial.println(String(AngleMod360())        + '#');        // note this is a test print from the block above and is serial not serial1
-  }
-  else   //querydir is anticlockwise
-  {
-  Monitor.print(String(AngleMod360() )       + '#');         
-  }
+      
+  Monitor.print(String(distanceToTarget() )  + '#');       // in the monitor program this is called distance to target
+    
   Monitor.print(String(EncoderReplyCounter)  + '#');
   /*
   list of data need by the monitor program
@@ -589,16 +408,35 @@ void SendToMonitor()
   movementstate
   querydir
   targetmessage
-  anglemod360
+  distance to target
   encoderreplycounter
   */
 }
+
+int  distanceToTarget()
+{
+  CurrentAzimuth     =  getCurrentAzimuth();
+  int clockcount     =  calculateClockwiseSteps();
+  int anticlockcount =  calculateAnticlockwiseSteps();
+  if (clockcount <= anticlockcount)
+  {
+    return clockcount;
+  }
+  else{
+    return anticlockcount;
+  }
+}
+
+//---------------------------------------------------------------------------------------------------------------
+
 void PowerOn()                          // set the power SSR gate high
 {
 digitalWrite(power_pin,      HIGH);
 
 delay(2000);                            // gives time for the MA860H unit to power on and stabilise
 }
+
+//---------------------------------------------------------------------------------------------------------------
 
 void PowerOff()                         // set the power SSR gate low
 {
