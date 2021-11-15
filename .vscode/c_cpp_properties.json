@@ -10,7 +10,6 @@
             "includePath": [
                 "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/include",
                 "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/src",
-                "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Wire/src",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Circular-Linked-List/include",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Circular-Linked-List/src",
                 "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/ATmega4809/AccelStepper/src",
@@ -44,6 +43,7 @@
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SPI/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Servo/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SoftwareSerial/src",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Wire/src",
                 "C:/Users/Paul/.platformio/packages/tool-unity",
                 ""
             ],
@@ -52,7 +52,6 @@
                 "path": [
                     "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/include",
                     "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/src",
-                    "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Wire/src",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Circular-Linked-List/include",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Circular-Linked-List/src",
                     "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/ATmega4809/AccelStepper/src",
@@ -86,6 +85,7 @@
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SPI/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Servo/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SoftwareSerial/src",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Wire/src",
                     "C:/Users/Paul/.platformio/packages/tool-unity",
                     ""
                 ]
