@@ -40,7 +40,7 @@ int    getCurrentAzimuth();
 void   SendToMonitor();
 void   PowerOn();
 void   PowerOff();
-int    distanceToTarget();
+
 // end declarations
 
 
@@ -71,9 +71,10 @@ boolean TargetChanged = false;
 
 float   normalAcceleration;                            // was incorrectly set to data type int
 
+int     stepsToTarget               =0;
 int     DecelValue                  = 800;                // set after empirical test Oct 2020
 int     EncoderReplyCounter         = 0;
-
+int     savedAzimuth                = 0;
 long    pkstart                     = 0.0l;              // note i after 0.0 denotes long number - same type as millis()
 
 
@@ -120,10 +121,16 @@ void setup()
   ASCOM.begin(19200) ;                        // start serial ports ASCOM driver - usb with PC - rx0 tx0 and updi
   Encoder.begin(19200);                        // Link with the Encoder MCU
   Monitor.begin(19200);                        // serial with the Monitor program
-
-  
+//todo remove these two test lines
+//  delay(20000);
+//  Serial.println("usual crap before get az");
   TargetAzimuth =  getCurrentAzimuth();        // 
-  
+//  todo remove the two test lines below
+//  Serial.println("usual crap after get az");
+//  delay(5000);
+
+
+initialiseCDArray();
 
 } // end setup
 
@@ -146,7 +153,6 @@ void loop()
 
     receivedData = ASCOM.readStringUntil('#');          // read a string from PC serial port usb
 
-    
 
     //*************************************************************************
     //******** code for ES process below **************************************
@@ -191,10 +197,12 @@ void loop()
         stepper.setAcceleration(normalAcceleration);      // set the acceleration
         stepper.setCurrentPosition(0);                    // initialise the stepper position
         QueryDir = WhichDirection();                      // work out which direction of travle is optimum
+      //todo remove 2 lines blow
+        //ASCOM.print("So the direction is  ");
+        //ASCOM.println(QueryDir);
 
         if (QueryDir == "clockwise")
         {
-          
           stepper.moveTo(100000);                         // positive number means clockwise in accelstepper library
 
         }
@@ -251,7 +259,7 @@ void loop()
 
       //update the LCD info
       //
-      if (  (millis() - pkstart) > 1000.0  )                // half second checks for azimuth value as the dome moves
+      if (  (millis() - pkstart) > 1000.0  )                // one second checks for azimuth value as the dome moves
         {
 
           SendToMonitor();
@@ -309,13 +317,26 @@ String WhichDirection(){
   // optimises battery use by the motor.
 
 
-
   CurrentAzimuth = getCurrentAzimuth();   // this comes from the encoder 
-  calculateClockwiseSteps();
-  calculateAnticlockwiseSteps();
-  String direction = movementDirection();   //whichever is the smallest number of steps informs the direction to target
-
-  return direction;
+  //savedAzimuth = CurrentAzimuth;          //save this to work out the distance to go
+  int clockwiseSteps = calculateClockwiseSteps();
+  int antiClockwiseSteps =  360 - clockwiseSteps;
+  //todo remove 4 lines blow
+  //ASCOM.print("CLOCKWISE STEPS = ");
+  //ASCOM.println(clockwiseSteps);
+  //ASCOM.print("ANTI Clockwise Steps = ");
+  //ASCOM.println(antiClockwiseSteps);
+   if (clockwiseSteps <= antiClockwiseSteps)
+  {
+    stepsToTarget = clockwiseSteps;       // used to define the number of items in the countdown array
+    countDown("clockwise");                          // populate the cdarray with the smaller number of steps
+    return "clockwise";
+  }
+  else{
+    stepsToTarget = antiClockwiseSteps;    // used to define the number of items in the countdown array
+    countDown("anticlockwise");   //populate the cdarray with the smaller number of steps
+    return "anticlockwise";
+  }
   
 }
 
@@ -398,8 +419,8 @@ void SendToMonitor()
   Monitor.print(movementstate                + '#');
   Monitor.print(QueryDir                     + '#');
   Monitor.print(TargetMessage                + '#');
-      
-  Monitor.print(String(distanceToTarget() )  + '#');       // in the monitor program this is called distance to target
+  CurrentAzimuth= getCurrentAzimuth();
+  Monitor.print(String(CDArray[CurrentAzimuth])  + '#');       // in the monitor program this is called distance to target
     
   Monitor.print(String(EncoderReplyCounter)  + '#');
   /*
@@ -413,19 +434,6 @@ void SendToMonitor()
   */
 }
 
-int  distanceToTarget()
-{
-  CurrentAzimuth     =  getCurrentAzimuth();
-  int clockcount     =  calculateClockwiseSteps();
-  int anticlockcount =  calculateAnticlockwiseSteps();
-  if (clockcount <= anticlockcount)
-  {
-    return clockcount;
-  }
-  else{
-    return anticlockcount;
-  }
-}
 
 //---------------------------------------------------------------------------------------------------------------
 
