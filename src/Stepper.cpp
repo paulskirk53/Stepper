@@ -46,13 +46,14 @@ void   PowerOff();
 
 // define the DC power control pin which is used to drive the gate of the solid state relay
 #define power_pin             7        
+#define MCU_Reset 12
 
 // Define a stepper and the pins it will use
 
 // pin definitions for step, dir and enable
 
-#define                stepPin 11
-#define                dirPin  10
+#define   stepPin 11
+#define   dirPin  10
 // meaningful names for the serial ports
 #define Monitor Serial2
 #define ASCOM   Serial
@@ -94,7 +95,8 @@ String  pkversion     = "6.0";
 void setup()
 {
 
-  //  changed the following line for the 4809 context 
+  pinMode (MCU_Reset, OUTPUT);                  // used to software reset the stepper MCU from the monitor program
+  digitalWrite(MCU_Reset, HIGH);
   pinMode(9, INPUT_PULLUP);                     // see the notes in github. this pulls up the serial Rx pin to 5v.
 
   stepper.stop();                               // set initial state as stopped
@@ -146,7 +148,14 @@ void loop()
 {
 
   // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
-
+  if(Monitor.available() >0)
+  {
+    String monitorReceipt = Monitor.readStringUntil('#');
+    if(monitorReceipt.indexOf("reset", 0) > -1) 
+    {
+      digitalWrite(MCU_Reset, LOW);   // LOW resets the MCU
+    }
+  }
 
   if (ASCOM.available() > 0)                              // when serial data arrives from the driver on USB capture it into a string
   {
@@ -263,9 +272,6 @@ void loop()
         {
 
           SendToMonitor();
-
-
-          // CHECK HERE IF Monitor Serial is available - request from monitor program
 
           pkstart = millis();
 
