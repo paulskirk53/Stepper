@@ -154,6 +154,8 @@ void loop()
     if(monitorReceipt.indexOf("reset", 0) > -1) 
     {
       digitalWrite(MCU_Reset, LOW);   // LOW resets the MCU
+      delay(1000);
+      digitalWrite(MCU_Reset, HIGH);  //  HIGH FOR mcu TO RUN
     }
   }
 
