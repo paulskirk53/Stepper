@@ -27,6 +27,7 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 
 
 #include <Arduino.h>
+#include <avr/cpufunc.h> /* Required header file */
 #include <AccelStepper.h>
 #include "linkedList.h"
 
@@ -40,13 +41,14 @@ int    getCurrentAzimuth();
 void   SendToMonitor();
 void   PowerOn();
 void   PowerOff();
+void   resetViaSWR();
 
 // end declarations
 
 
 // define the DC power control pin which is used to drive the gate of the solid state relay
 #define power_pin             7        
-#define MCU_Reset 12
+
 
 // Define a stepper and the pins it will use
 
@@ -94,9 +96,7 @@ String  pkversion     = "6.0";
 
 void setup()
 {
-
-  pinMode (MCU_Reset, OUTPUT);                  // used to software reset the stepper MCU from the monitor program
-  digitalWrite(MCU_Reset, HIGH);
+  
   pinMode(9, INPUT_PULLUP);                     // see the notes in github. this pulls up the serial Rx pin to 5v.
 
   stepper.stop();                               // set initial state as stopped
@@ -124,15 +124,22 @@ void setup()
   Encoder.begin(19200);                        // Link with the Encoder MCU
   Monitor.begin(19200);                        // serial with the Monitor program
 //todo remove these two test lines
-//  delay(20000);
-//  Serial.println("usual crap before get az");
-  TargetAzimuth =  getCurrentAzimuth();        // 
+  // delay(15000);
+ // ASCOM.println("usual crap before get az");
+  
+  
+  TargetAzimuth =  getCurrentAzimuth();        //
+
+
 //  todo remove the two test lines below
-//  Serial.println("usual crap after get az");
-//  delay(5000);
+  //ASCOM.println("usual crap after get az");
+ // delay(5000);
 
 
 initialiseCDArray();
+
+ //delay(15000);            //THIS DELAY is set to give the operator time to open com12 (ASCOM port) to check if the message below arrives tested ok 22/11/21
+ //ASCOM.print("MCU RESET");
 
 } // end setup
 
@@ -153,9 +160,10 @@ void loop()
     String monitorReceipt = Monitor.readStringUntil('#');
     if(monitorReceipt.indexOf("reset", 0) > -1) 
     {
-      digitalWrite(MCU_Reset, LOW);   // LOW resets the MCU
-      delay(1000);
-      digitalWrite(MCU_Reset, HIGH);  //  HIGH FOR mcu TO RUN
+      Monitor.print("resetting");
+      ASCOM.print("get this");
+      resetViaSWR();
+      
     }
   }
 
@@ -457,4 +465,9 @@ delay(2000);                            // gives time for the MA860H unit to pow
 void PowerOff()                         // set the power SSR gate low
 {
 digitalWrite(power_pin,      LOW);
+}
+
+void resetViaSWR()
+{
+  _PROTECTED_WRITE(RSTCTRL.SWRR,1);
 }
