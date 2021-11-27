@@ -26,7 +26,7 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 // It acquires the current azimuth via hardware serial from the encoder
 
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include <avr/cpufunc.h> /* Required header file */
 #include <AccelStepper.h>
 #include "linkedList.h"
@@ -34,6 +34,7 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 //#include <Wire.h>
 
 //Forward declarations
+
 void   Emergency_Stop(int azimuth, String mess);
 String WhichDirection();
 void   WithinFiveDegrees();
@@ -42,15 +43,13 @@ void   SendToMonitor();
 void   PowerOn();
 void   PowerOff();
 void   resetViaSWR();
+void  lightup();
 
 // end declarations
 
 
 // define the DC power control pin which is used to drive the gate of the solid state relay
-#define power_pin             7        
-
-
-// Define a stepper and the pins it will use
+#define power_pin  7        
 
 // pin definitions for step, dir and enable
 
@@ -60,8 +59,8 @@ void   resetViaSWR();
 #define Monitor Serial2
 #define ASCOM   Serial
 #define Encoder Serial1
-
-//CREATE INSTANCE OF STEPPER MOTOR
+#define ledpin  6
+// Define a stepper and the pins it will use
 
 AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 
@@ -98,7 +97,9 @@ void setup()
 {
   
   pinMode(9, INPUT_PULLUP);                     // see the notes in github. this pulls up the serial Rx pin to 5v.
-
+  pinMode(ledpin, OUTPUT);
+  
+  lightup();                      //flash Led to indicate reset when the box lid is off for testing
   stepper.stop();                               // set initial state as stopped
 
   // Change below to suit the stepper
@@ -118,28 +119,29 @@ void setup()
   DoTheDeceleration = true;      // used to set deceleration towards target azimuth
   pkstart           = millis();
 
-  delay(2000);                      //why? no original comment is unhelpful
+  
 
   ASCOM.begin(19200) ;                        // start serial ports ASCOM driver - usb with PC - rx0 tx0 and updi
   Encoder.begin(19200);                        // Link with the Encoder MCU
   Monitor.begin(19200);                        // serial with the Monitor program
-//todo remove these two test lines
-  // delay(15000);
- // ASCOM.println("usual crap before get az");
+
+   delay(1000);                               // setup time for serial comms
+
+ // ASCOM.println(" before get az");
   
-  
+ // delay(2000);                      //why? no original comment is unhelpful
+
+ 
   TargetAzimuth =  getCurrentAzimuth();        //
 
 
-//  todo remove the two test lines below
-  //ASCOM.println("usual crap after get az");
- // delay(5000);
+//  todo remove the test lines below
+//  ASCOM.println(" after get az");
+  
 
 
 initialiseCDArray();
 
- //delay(15000);            //THIS DELAY is set to give the operator time to open com12 (ASCOM port) to check if the message below arrives tested ok 22/11/21
- //ASCOM.print("MCU RESET");
 
 } // end setup
 
@@ -162,6 +164,7 @@ void loop()
     {
       Monitor.print("resetting");
       ASCOM.print("get this");
+      //TODO MAYBE REINSTATE THE LINE BELOW - done
       resetViaSWR();
       
     }
@@ -337,11 +340,7 @@ String WhichDirection(){
   //savedAzimuth = CurrentAzimuth;          //save this to work out the distance to go
   int clockwiseSteps = calculateClockwiseSteps();
   int antiClockwiseSteps =  360 - clockwiseSteps;
-  //todo remove 4 lines blow
-  //ASCOM.print("CLOCKWISE STEPS = ");
-  //ASCOM.println(clockwiseSteps);
-  //ASCOM.print("ANTI Clockwise Steps = ");
-  //ASCOM.println(antiClockwiseSteps);
+
    if (clockwiseSteps <= antiClockwiseSteps)
   {
     stepsToTarget = clockwiseSteps;       // used to define the number of items in the countdown array
@@ -470,4 +469,16 @@ digitalWrite(power_pin,      LOW);
 void resetViaSWR()
 {
   _PROTECTED_WRITE(RSTCTRL.SWRR,1);
+}
+
+void lightup()
+{
+  for (int i=0; i<10; i++)
+{
+  digitalWrite(ledpin, HIGH);
+  delay(1000);
+  digitalWrite(ledpin, LOW);
+  delay(1000);
+}
+
 }
