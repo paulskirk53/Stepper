@@ -43,7 +43,7 @@ void   SendToMonitor();
 void   PowerOn();
 void   PowerOff();
 void   resetViaSWR();
-void  lightup();
+void   lightup();
 
 // end declarations
 
@@ -73,7 +73,7 @@ boolean TargetChanged = false;
 
 float   normalAcceleration;                            // was incorrectly set to data type int
 
-int     stepsToTarget               =0;
+int     stepsToTarget               = 0;
 int     DecelValue                  = 800;                // set after empirical test Oct 2020
 int     EncoderReplyCounter         = 0;
 int     savedAzimuth                = 0;
@@ -95,7 +95,8 @@ String  pkversion     = "6.0";
 
 void setup()
 {
-  
+  pinMode (power_pin, OUTPUT);
+  digitalWrite(power_pin, LOW);         //initialise the pin state so that the mosfet gate is Low and therefore power to the MA860H is off
   pinMode(9, INPUT_PULLUP);                     // see the notes in github. this pulls up the serial Rx pin to 5v.
   pinMode(ledpin, OUTPUT);
   
@@ -141,7 +142,17 @@ void setup()
 
 
 initialiseCDArray();
+// CODE BELOW FOR TESTING FOLLOWING DOME SMASH UP - THE MOTOR WOULD NOT RUN PROPERLY
+/*
+PowerOn();
+stepper.moveTo(10000);
+while(1)
+{
+  stepper.run();
+}
+*/
 
+//END SMASH UP CODE
 
 } // end setup
 
@@ -157,13 +168,14 @@ void loop()
 {
 
   // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
+
   if(Monitor.available() >0)
   {
     String monitorReceipt = Monitor.readStringUntil('#');
     if(monitorReceipt.indexOf("reset", 0) > -1) 
     {
       Monitor.print("resetting");
-      ASCOM.print("get this");
+     // ASCOM.print("get this");
       //TODO MAYBE REINSTATE THE LINE BELOW - done
       resetViaSWR();
       
@@ -219,31 +231,32 @@ void loop()
         stepper.setAcceleration(normalAcceleration);      // set the acceleration
         stepper.setCurrentPosition(0);                    // initialise the stepper position
         QueryDir = WhichDirection();                      // work out which direction of travle is optimum
-      //todo remove 2 lines blow
+        //todo remove 2 lines blow
         //ASCOM.print("So the direction is  ");
         //ASCOM.println(QueryDir);
 
         if (QueryDir == "clockwise")
         {
-          stepper.moveTo(100000);                         // positive number means clockwise in accelstepper library
+          stepper.moveTo(150000000);                         // positive number means clockwise in accelstepper library
 
         }
 
         if (QueryDir == "anticlockwise")
         {
           
-          stepper.moveTo(-100000);                      // negative is anticlockwise in accelstepper library
+          stepper.moveTo(-150000000);                      // negative is anticlockwise in accelstepper library
 
         }
         
         DoTheDeceleration = true;
 
-        receivedData = "";
+       // MOVED THE FOLLOWING FROM HERE TO NEXT LEVEL receivedData = "";
 
       }
-
+      receivedData = "";
     }
-
+//todo check the stmt below is req'd
+//stepper.run();
     //*************************************************************************
     // ******** code for SL process below *************************************
     //**** example of data sent by driver SL#  **************************
@@ -251,12 +264,12 @@ void loop()
     //
 
     if (receivedData.indexOf("SL", 0) > -1) //
-
     {
       
       if (SlewStatus)
       {
         ASCOM.print("Moving#" );
+        //stepper.run();
         
       }
       else
@@ -283,7 +296,7 @@ void loop()
       //
       if (  (millis() - pkstart) > 1000.0  )                // one second checks for azimuth value as the dome moves
         {
-
+//TODO UNCOMMENT THE LINE BELOW
           SendToMonitor();
 
           pkstart = millis();
@@ -291,7 +304,8 @@ void loop()
         }
 
     }
-
+    //todo check stmt below helps
+//stepper.run();
 
   if (    abs( stepper.distanceToGo() ) < 20   )
     {
@@ -302,7 +316,7 @@ void loop()
       // Serial.println();
       //update the LCD
       TargetMessage = "Target achieved ";
-
+//TODO UNCOMMENT THE LINE BELOW
       SendToMonitor();
      
       PowerOff();                                // power off the stepper now that the target is reached.
@@ -315,7 +329,7 @@ void loop()
       stepper.run();
     }
 
-
+// stepper.run();
 
 } // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -396,10 +410,11 @@ int getCurrentAzimuth()
 
   while (validaz == false)
   {
-
+    
     Encoder.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
-
-    delay(100);  //Some testing showed this line improves reliability of the send /receive cycle
+     //TODO THE LINE BELOW HAS BEEN COMMENTED OUT, BECAUSE FIELD TEST OF THE ACTUAL MOTOR SHOWED major SLOWDOWN TO AN UNUSABLE EXTENT
+     //SO i GUESS IT WOULD BE BETTER TO USE LIGHTNING FAST spi FOR THIS COMMS CIBAT?
+    // delay(100);  //Some testing showed this line improves reliability of the send /receive cycle
     if (Encoder.available() > 0)                       // when serial data arrives capture it into a string
     {
 
