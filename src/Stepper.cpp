@@ -237,7 +237,8 @@ void loop()
 
         if (QueryDir == "clockwise")
         {
-          stepper.moveTo(150000000);                         // positive number means clockwise in accelstepper library
+          stepper.moveTo(150000000);                         // positive number means clockwise in accelstepper library. This number must be sufficiently large
+                                                             // to provide enough steps to reach the target.
 
         }
 
@@ -255,8 +256,8 @@ void loop()
       }
       receivedData = "";
     }
-//todo check the stmt below is req'd
-//stepper.run();
+    //todo check the stmt below is req'd
+    //stepper.run();
     //*************************************************************************
     // ******** code for SL process below *************************************
     //**** example of data sent by driver SL#  **************************
@@ -304,8 +305,7 @@ void loop()
         }
 
     }
-    //todo check stmt below helps
-//stepper.run();
+    
 
   if (    abs( stepper.distanceToGo() ) < 20   )
     {
@@ -316,7 +316,7 @@ void loop()
       // Serial.println();
       //update the LCD
       TargetMessage = "Target achieved ";
-//TODO UNCOMMENT THE LINE BELOW
+
       SendToMonitor();
      
       PowerOff();                                // power off the stepper now that the target is reached.
@@ -329,7 +329,7 @@ void loop()
       stepper.run();
     }
 
-// stepper.run();
+ stepper.run();
 
 } // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -410,7 +410,7 @@ int getCurrentAzimuth()
 
   while (validaz == false)
   {
-    
+  
     Encoder.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
      //TODO THE LINE BELOW HAS BEEN COMMENTED OUT, BECAUSE FIELD TEST OF THE ACTUAL MOTOR SHOWED major SLOWDOWN TO AN UNUSABLE EXTENT
      //SO i GUESS IT WOULD BE BETTER TO USE LIGHTNING FAST spi FOR THIS COMMS CIBAT?
@@ -443,16 +443,24 @@ int getCurrentAzimuth()
 
 void SendToMonitor()
 {
+Monitor.print("START#" + String(TargetAzimuth) + '#' + movementstate + '#' + QueryDir + '#' + TargetMessage + '#');
 
+/*
+the line above can be removed and the commented section below reinstated. Done to try to improve speed
   Monitor.print("START#");
   Monitor.print(String(TargetAzimuth)        + '#');
   Monitor.print(movementstate                + '#');
   Monitor.print(QueryDir                     + '#');
   Monitor.print(TargetMessage                + '#');
-  CurrentAzimuth= getCurrentAzimuth();
-  Monitor.print(String(CDArray[CurrentAzimuth])  + '#');       // in the monitor program this is called distance to target
+  */
+  
+  CurrentAzimuth= getCurrentAzimuth(); //TODO this line was commented on 11-1-22 to try to speed up the stepper motor. The only problem it seems to cause is in the monitor
+  // program where the comms status labels are not live unless the dome is moving. This could be ok, but if its a problem, reinstate this line.
+  //THE LINE WAS REINSTATED BECAUSE THE DISTANCE TO TARGET IN THE MONITOR WASN'T UPDATING. BUT IT CAUSES SLOWNESS OF THE MOTOR.
+  //
+  Monitor.print(String(CDArray[CurrentAzimuth])  + '#' + String(EncoderReplyCounter)  + '#');       // in the monitor program this is called distance to target
     
-  Monitor.print(String(EncoderReplyCounter)  + '#');
+ // Monitor.print(String(EncoderReplyCounter)  + '#');
   /*
   list of data need by the monitor program
   targetazimuth
