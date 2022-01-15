@@ -2,7 +2,7 @@
 
 Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 
-This is the Linked-List-Merged-Box version - undergoing changes to incorporate the linked list
+This is the with SPI-Comms version - undergoing changes to incorporate SPI between the MCUs - pins for SPI freed up 15-1-22
 
 
 Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
@@ -49,7 +49,7 @@ void   lightup();
 
 
 // define the DC power control pin which is used to drive the gate of the solid state relay
-#define power_pin  7        
+#define power_pin  2            //changed from pin 7 to 2 in the box        
 
 // pin definitions for step, dir and enable
 
@@ -59,7 +59,7 @@ void   lightup();
 #define Monitor Serial2
 #define ASCOM   Serial
 #define Encoder Serial1
-#define ledpin  6
+#define ledpin  3
 // Define a stepper and the pins it will use
 
 AccelStepper  stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
