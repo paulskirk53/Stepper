@@ -27,11 +27,10 @@ Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note 
 
 
 //#include <Arduino.h>
-#include <avr/cpufunc.h> /* Required header file */
+#include <avr/cpufunc.h> /* Required header file for wdt resets*/
 #include <AccelStepper.h>
 #include "linkedList.h"
-
-//#include <Wire.h>
+#include <SPI.h>        // Stepper is SPI master
 
 //Forward declarations
 
@@ -44,6 +43,7 @@ void   PowerOn();
 void   PowerOff();
 void   resetViaSWR();
 void   lightup();
+static void SPI0_init(void);
 
 // end declarations
 
@@ -95,12 +95,17 @@ String  pkversion     = "6.0";
 
 void setup()
 {
+  
+  SPI0_init();
+  digitalWrite(SS, HIGH);               // Set SS high
+  SPI.begin();                          // sets up the SPI hardware
+  
   pinMode (power_pin, OUTPUT);
-  digitalWrite(power_pin, LOW);         //initialise the pin state so that the mosfet gate is Low and therefore power to the MA860H is off
+  digitalWrite(power_pin, LOW);         // initialise the pin state so that the mosfet gate is Low and therefore power to the MA860H is off
   pinMode(9, INPUT_PULLUP);                     // see the notes in github. this pulls up the serial Rx pin to 5v.
   pinMode(ledpin, OUTPUT);
   
-  lightup();                      //flash Led to indicate reset when the box lid is off for testing
+  lightup();                            // flash Led to indicate reset when the box lid is off for testing
   stepper.stop();                               // set initial state as stopped
 
   // Change below to suit the stepper
@@ -128,7 +133,7 @@ void setup()
 
    delay(1000);                               // setup time for serial comms
 
- // ASCOM.println(" before get az");
+ // ASCOM.println(" before get azimuth");
   
  // delay(2000);                      //why? no original comment is unhelpful
 
@@ -137,7 +142,7 @@ void setup()
 
 
 //  todo remove the test lines below
-//  ASCOM.println(" after get az");
+//  ASCOM.println(" after get azimuth");
   
 
 
@@ -218,7 +223,7 @@ void loop()
       // strip off 1st 2 chars
       receivedData.remove(0, 2);
 
-      TargetAzimuth = receivedData.toInt();    // store the target az for comparison with current position
+      TargetAzimuth = receivedData.toInt();    // store the target azimuth for comparison with current position
       TargetChanged = true;
 
       //  Serial.println();
@@ -351,7 +356,7 @@ String WhichDirection(){
 
 
   CurrentAzimuth = getCurrentAzimuth();   // this comes from the encoder 
-  //savedAzimuth = CurrentAzimuth;          //save this to work out the distance to go
+  //azimuth = CurrentAzimuth;          //save this to work out the distance to go
   int clockwiseSteps = calculateClockwiseSteps();
   int antiClockwiseSteps =  360 - clockwiseSteps;
 
@@ -404,25 +409,47 @@ void WithinFiveDegrees()
 
 int getCurrentAzimuth()
 {
-  int az;
+  char trigger;
+  uint16_t azimuth;
+
+  byte LB ;            // holds the low byte returned from slave
+  byte HB ;            // ditto highbyte
+  byte dummy ;         //
   
   boolean validaz = false;
 
   while (validaz == false)
   {
-  
-    Encoder.print("AZ#");          //this is sent to the encoder which is coded to return the azimuth of the dome
-     //TODO THE LINE BELOW HAS BEEN COMMENTED OUT, BECAUSE FIELD TEST OF THE ACTUAL MOTOR SHOWED major SLOWDOWN TO AN UNUSABLE EXTENT
-     //SO i GUESS IT WOULD BE BETTER TO USE LIGHTNING FAST spi FOR THIS COMMS CIBAT?
-    // delay(100);  //Some testing showed this line improves reliability of the send /receive cycle
-    if (Encoder.available() > 0)                       // when serial data arrives capture it into a string
-    {
 
-      String receipt = Encoder.readStringUntil('#');   // read a string from the encoder
-     
-      az = receipt.toInt();                          // convert
+      // do the SPI transactions here
+      // configure the SPI settings
+      SPI.beginTransaction (SPISettings (2000000, LSBFIRST, SPI_MODE0));   // 2 meg clock changed from MSBFIRST to SB....because the microchip example sets that up in slave
 
-      if (  (az > 0) && (az <= 359) )
+      // enable Slave Select
+      digitalWrite(SS, LOW);              // SS is active LOW
+      
+      trigger = 'A';
+      dummy = SPI.transfer(trigger);      // this returns whatever happened to be in the SPDR
+      delayMicroseconds(20);              // propagation delay required by SPI
+
+      trigger = 'L';
+      LB = SPI.transfer(trigger);         // this returns the low byte
+      delayMicroseconds(20);              // propagation delay required by SPI
+
+      trigger = 'H';
+      HB = SPI.transfer(trigger);         // this returns the high byte
+      delayMicroseconds(20);              // propagation delay required by SPI
+
+      
+      digitalWrite(SS, HIGH);             // disable Slave Select
+
+      // turn SPI hardware off
+      SPI.endTransaction ();              // transaction over
+
+      SPI.end();
+      azimuth = (HB << 8) | LB ;          // push the highbyte value 8 bits left to occupy the high 8 bits of the 16 bit int
+
+      if (  (azimuth >= 0) && (azimuth <= 360) )         // changed >0 to >= 0 and also from 359 to 360 as part of SPI work
       {
         validaz = true;
         EncoderReplyCounter ++ ;                       // A counter used to indicate whether the encoder has replied with a valid azimuth
@@ -432,10 +459,15 @@ int getCurrentAzimuth()
         }  //endif
       }  //endif
 
-    }  // endif serial available
-  }
+        
+  } // endwhile validaz
 
-  return az;
+//todo - remove the test serial prints - two lines below  these were used to test the SPI data returns
+//ASCOM.print ("the azimuth is ");
+//ASCOM.println(azimuth);
+
+  return azimuth;
+
 }   // end getCurrentAzimuth()
 
 
@@ -504,4 +536,18 @@ void lightup()
   delay(1000);
 }
 
+}
+
+static void SPI0_init(void)
+{
+    PORTA.DIR |= PIN4_bm; /* Set MOSI pin direction to output */
+    PORTA.DIR &= ~PIN5_bm; /* Set MISO pin direction to input */
+    PORTA.DIR |= PIN6_bm; /* Set SCK pin direction to output */
+    PORTA.DIR |= PIN7_bm; /* Set SS pin direction to output */
+
+    SPI0.CTRLA = SPI_CLK2X_bm           /* Enable double-speed */
+               | SPI_DORD_bm            /* LSB is transmitted first */
+               | SPI_ENABLE_bm          /* Enable module */
+               | SPI_MASTER_bm          /* SPI module in Master mode */
+               | SPI_PRESC_DIV16_gc;    /* System Clock divided by 16 */
 }

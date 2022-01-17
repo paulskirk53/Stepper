@@ -10,6 +10,7 @@
             "includePath": [
                 "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/include",
                 "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/src",
+                "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SPI/src",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Circular-Linked-List/include",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Circular-Linked-List/src",
                 "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/ATmega4809/SoftwareReset/src",
@@ -41,7 +42,6 @@
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/MegaCoreX/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Optiboot_flasher/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SD/src",
-                "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SPI/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Servo/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SoftwareSerial/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Wire/src",
@@ -53,6 +53,7 @@
                 "path": [
                     "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/include",
                     "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/src",
+                    "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SPI/src",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Circular-Linked-List/include",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Circular-Linked-List/src",
                     "c:/Users/Paul/Documents/PlatformIO/Projects/Live/Stepper/.pio/libdeps/ATmega4809/SoftwareReset/src",
@@ -84,7 +85,6 @@
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/MegaCoreX/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Optiboot_flasher/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SD/src",
-                    "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SPI/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Servo/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SoftwareSerial/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Wire/src",
