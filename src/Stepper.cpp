@@ -91,9 +91,7 @@ String pkversion = "6.0";
 void setup()
 {
 
-  SPI0_init();
-  digitalWrite(SS, HIGH); // Set SS high
-  SPI.begin();            // sets up the SPI hardware
+
 
   pinMode(power_pin, OUTPUT);
   digitalWrite(power_pin, LOW); // initialise the pin state so that the mosfet gate is Low and therefore power to the MA860H is off
@@ -128,23 +126,17 @@ void setup()
 
   // ASCOM.println(" before get azimuth");
 
-  // delay(2000);                      //why? no original comment is unhelpful
+  // this code below os placed in this sequence for a good reason
+  SPI0_init();
+  digitalWrite(SS, HIGH); // Set SS high
+  SPI.begin();            // sets up the SPI hardware
+  delay(100);             // for SPI to setup
 
-  TargetAzimuth = getCurrentAzimuth(); //
+  TargetAzimuth = getCurrentAzimuth(); // uses SPI
 
-  //  todo remove the test lines below
-  //  ASCOM.println(" after get azimuth");
 
   initialiseCDArray();
-  // CODE BELOW FOR TESTING FOLLOWING DOME SMASH UP - THE MOTOR WOULD NOT RUN PROPERLY
-  /*
-  PowerOn();
-  stepper.moveTo(10000);
-  while(1)
-  {
-    stepper.run();
-  }
-  */
+  
 
   // END SMASH UP CODE
 
@@ -446,10 +438,8 @@ void SendToMonitor()
     Monitor.print(TargetMessage                + '#');
     */
 
-  CurrentAzimuth = getCurrentAzimuth(); // TODO this line was commented on 11-1-22 to try to speed up the stepper motor. The only problem it seems to cause is in the monitor
-  // program where the comms status labels are not live unless the dome is moving. This could be ok, but if its a problem, reinstate this line.
-  // THE LINE WAS REINSTATED BECAUSE THE DISTANCE TO TARGET IN THE MONITOR WASN'T UPDATING. BUT IT CAUSES SLOWNESS OF THE MOTOR.
-  //
+  CurrentAzimuth = getCurrentAzimuth(); // uses SPI
+  
   Monitor.print(String(CDArray[CurrentAzimuth]) + '#' + String(EncoderReplyCounter) + '#'); // in the monitor program this is called distance to target
 
   // Monitor.print(String(EncoderReplyCounter)  + '#');
