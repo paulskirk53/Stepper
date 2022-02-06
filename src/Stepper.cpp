@@ -157,6 +157,11 @@ void loop()
   if (Monitor.available() > 0)
   {
     String monitorReceipt = Monitor.readStringUntil('#');
+
+    if (monitorReceipt.indexOf("test", 0) > -1)
+    {
+      Monitor.print("stepper#");
+    }
     if (monitorReceipt.indexOf("reset", 0) > -1)
     {
       Monitor.print("resetting");
