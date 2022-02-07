@@ -158,7 +158,7 @@ void loop()
   {
     String monitorReceipt = Monitor.readStringUntil('#');
 
-    if (monitorReceipt.indexOf("test", 0) > -1)
+    if (monitorReceipt.indexOf("stepper", 0) > -1)
     {
       Monitor.print("stepper#");
     }
