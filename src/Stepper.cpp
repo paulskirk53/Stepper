@@ -68,20 +68,21 @@ boolean DoTheDeceleration;
 boolean SlewStatus;   // controls whether the stepper is stepped in the main loop
 float StepsPerSecond; // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
-boolean TargetChanged = false;
+boolean TargetChanged   = false;
+boolean monitorSendFlag = false;     // this only becomes true after the MCU is connected successfully and when true, the data stream to the monitor program is enabled
+float normalAcceleration;            // was incorrectly set to data type int
 
-float normalAcceleration; // was incorrectly set to data type int
-
-int stepsToTarget = 0;
-int DecelValue = 800; // set after empirical test Oct 2020
+int stepsToTarget       = 0;
+int DecelValue          = 800; // set after empirical test Oct 2020
 int EncoderReplyCounter = 0;
-int savedAzimuth = 0;
-long pkstart = 0.0l; // note i after 0.0 denotes long number - same type as millis()
+int savedAzimuth        = 0;
+long pkstart            = 0.0l; // note i after 0.0 denotes long number - same type as millis()
 
 String TargetMessage = "";
-String QueryDir = "No Direction";
+String QueryDir      = "No Direction";
 String movementstate = "Not Moving";
-String pkversion = "6.0";
+String pkversion     = "6.0";
+
 
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -158,9 +159,16 @@ void loop()
   {
     String monitorReceipt = Monitor.readStringUntil('#');
 
+if (monitorReceipt.indexOf("stopdata", 0) > -1)
+    {
+      
+      monitorSendFlag = false;             // this disables the data stream to the monitor program
+    }
+
     if (monitorReceipt.indexOf("stepper", 0) > -1)
     {
       Monitor.print("stepper#");
+      monitorSendFlag = true;             // this enables the data stream to the monitor program
     }
     if (monitorReceipt.indexOf("reset", 0) > -1)
     {
@@ -432,6 +440,8 @@ int getCurrentAzimuth()
 
 void SendToMonitor()
 {
+  if (monitorSendFlag)
+  {
   Monitor.print("START#" + String(TargetAzimuth) + '#' + movementstate + '#' + QueryDir + '#' + TargetMessage + '#');
 
   /*
@@ -457,6 +467,7 @@ void SendToMonitor()
   distance to target
   encoderreplycounter
   */
+  }
 }
 
 //---------------------------------------------------------------------------------------------------------------
