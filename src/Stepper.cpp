@@ -54,6 +54,7 @@ static void SPI0_init(void);
 
 #define stepPin 11
 #define dirPin 10
+
 // meaningful names for the serial ports
 #define Monitor Serial2
 #define ASCOM Serial
@@ -269,7 +270,32 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
 
     } // end SL case
 
-  } // end software serial
+
+    //*************************************************************************
+    //******** code for FH process below **************************************
+    //**** example of data sent by driver FH#  **************************
+    //*************************************************************************
+    //*************************************************************************
+
+    if (receivedData.indexOf("FH", 0) > -1)
+    {
+      //code ideas for FH 
+      /*
+      set a flag here which is detected in main loop to run the motor in the same way slewtatus does. This hands off motor control without blocking
+      SPI exchange homebyte
+      while ! homebyte
+      {
+      run motor
+      }
+      stop motor
+      */
+      
+
+    }
+
+
+
+  } // end ASCOM Available
 
   WithinFiveDegrees();
 
