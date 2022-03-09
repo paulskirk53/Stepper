@@ -1,13 +1,8 @@
 /*
 
+this is the findhome branch based on the SPI comms version
 
 
-Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note
-
-This is the with SPI-Comms version - undergoing changes to incorporate SPI between the MCUs - pins for SPI freed up 15-1-22
-
-
-Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note
 */
 
 //
@@ -43,7 +38,9 @@ void PowerOn();
 void PowerOff();
 void resetViaSWR();
 void lightup();
+
 static void SPI0_init(void);
+
 
 // end declarations
 
@@ -67,6 +64,8 @@ AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 String receivedData;
 boolean DoTheDeceleration;
 boolean SlewStatus;   // controls whether the stepper is stepped in the main loop
+boolean homing;
+boolean homeSensor;
 float StepsPerSecond; // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
 boolean TargetChanged   = false;
@@ -92,8 +91,6 @@ String pkversion     = "6.0";
 
 void setup()
 {
-
-
 
   pinMode(power_pin, OUTPUT);
   digitalWrite(power_pin, LOW); // initialise the pin state so that the mosfet gate is Low and therefore power to the MA860H is off
@@ -128,19 +125,20 @@ void setup()
 
   // ASCOM.println(" before get azimuth");
 
-  // this code below os placed in this sequence for a good reason
+  // this code below is placed in this sequence for a good reason
   SPI0_init();
   digitalWrite(SS, HIGH); // Set SS high
   SPI.begin();            // sets up the SPI hardware
   delay(100);             // for SPI to setup
 
-  TargetAzimuth = getCurrentAzimuth(); // uses SPI
+  TargetAzimuth = getCurrentAzimuth(); // uses SPI and in addition to returning the azimuth, the routine sets the variable called homing
+                                       // according thje whether the dome movement has activated the home sensor NB LOW (false) when the magnet is detected
 
 
   initialiseCDArray();
   
 
-  // END SMASH UP CODE
+ homing = false;    // todo - set this according to the state of homeSensor
 
 } // end setup
 
@@ -153,6 +151,7 @@ void setup()
 
 void loop()
 {
+ 
 
   // put your main code here, to run repeatedly, perhaps for eternity if the power holds up....
 
@@ -160,24 +159,24 @@ void loop()
   {
     String monitorReceipt = Monitor.readStringUntil('#');
 
-if (monitorReceipt.indexOf("stopdata", 0) > -1)
-    {
+    if (monitorReceipt.indexOf("stopdata", 0) > -1)
+      {
       
-      monitorSendFlag = false;             // this disables the data stream to the monitor program
-    }
+        monitorSendFlag = false;             // this disables the data stream to the monitor program
+      }
 
-    if (monitorReceipt.indexOf("stepper", 0) > -1)
-    {
-      Monitor.print("stepper#");
-      monitorSendFlag = true;             // this enables the data stream to the monitor program
-    }
-    if (monitorReceipt.indexOf("reset", 0) > -1)
-    {
-      Monitor.print("resetting");
-      // ASCOM.print("get this");
-      // TODO MAYBE REINSTATE THE LINE BELOW - done
-      resetViaSWR();
-    }
+      if (monitorReceipt.indexOf("stepper", 0) > -1)
+      {
+        Monitor.print("stepper#");
+        monitorSendFlag = true;             // this enables the data stream to the monitor program
+      }
+      if (monitorReceipt.indexOf("reset", 0) > -1)
+      {
+        Monitor.print("resetting");
+        // ASCOM.print("get this");
+        // TODO MAYBE REINSTATE THE LINE BELOW - done
+        resetViaSWR();
+      }
   }
 
   if (ASCOM.available() > 0) // when serial data arrives from the driver on USB capture it into a string
@@ -279,10 +278,24 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
 
     if (receivedData.indexOf("FH", 0) > -1)
     {
+       SlewStatus = false;  //controls the slewto azimuth motor control - we don't want this on now
+       stepper.moveTo(150000000);            // positive number means clockwise in accelstepper library. This number must be sufficiently large
+                                             // to provide enough steps to reach the target. Todo - check the No is large enough for a full rotation.
+       StepsPerSecond     = 150.0;           // changed to half speed for homing
+       normalAcceleration = 80.0;            // changed to half value for homing
+       stepper.setMaxSpeed(StepsPerSecond);  // steps per second see below -
+       stepper.setCurrentPosition(0);        // wherever the motor is now is set to position 0
+       stepper.setAcceleration(normalAcceleration); // steps per second per second.
+
+       PowerOn(); 
+       homing = true;               // used in loop() to control motor movement
+
+       // resetViaSWR();        // resetting the CPU is the only non blocking way to trigger the home procedure
+
       //code ideas for FH 
       /*
-      set a flag here which is detected in main loop to run the motor in the same way slewtatus does. This hands off motor control without blocking
-      SPI exchange homebyte
+      
+      SPI exchange homebyte  - done via getcurrentazimuth() - check to see that this is returned properly
       while ! homebyte
       {
       run motor
@@ -297,10 +310,13 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
 
   } // end ASCOM Available
 
-  WithinFiveDegrees();
+  if (!homing)                // i.e we are not homing
+  {
+    WithinFiveDegrees();      // only do this if we're not homing
+  }
 
   if (SlewStatus) // if the slew status is true, run the stepper
-  {
+    {
 
     stepper.run();
 
@@ -337,6 +353,13 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
   }
 
   stepper.run();
+
+  getCurrentAzimuth();
+  if (homeSensor == LOW)
+  {
+    homing = false;
+  }
+
 
 } // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -436,6 +459,10 @@ int getCurrentAzimuth()
     HB = SPI.transfer(trigger); // this returns the high byte
     delayMicroseconds(20);      // propagation delay required by SPI
 
+    trigger = 'S';
+    homeSensor = SPI.transfer(trigger);
+    delayMicroseconds(20);      // propagation delay required by SPI
+
     digitalWrite(SS, HIGH); // disable Slave Select
 
     // turn SPI hardware off
@@ -527,6 +554,8 @@ void lightup()
     delay(1000);
   }
 }
+
+
 
 static void SPI0_init(void)
 {
