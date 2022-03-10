@@ -221,6 +221,15 @@ void loop()
       {
         SlewStatus = true;
         stepper.setAcceleration(normalAcceleration); // set the acceleration
+
+        StepsPerSecond = 300.0;              // changed following empirical testing Oct 2020
+        normalAcceleration = 140.0;          // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
+        stepper.setMaxSpeed(StepsPerSecond); // steps per second see below -
+        stepper.setCurrentPosition(0);
+        
+
+
+
         stepper.setCurrentPosition(0);               // initialise the stepper position
         QueryDir = WhichDirection();                 // work out which direction of travle is optimum
         // todo remove 2 lines blow
@@ -278,14 +287,13 @@ void loop()
 
     if (receivedData.indexOf("FH", 0) > -1)
     {
-       SlewStatus = false;  //controls the slewto azimuth motor control - we don't want this on now
-       stepper.moveTo(150000000);            // positive number means clockwise in accelstepper library. This number must be sufficiently large
-                                             // to provide enough steps to reach the target. Todo - check the No is large enough for a full rotation.
-       StepsPerSecond     = 150.0;           // changed to half speed for homing
-       normalAcceleration = 80.0;            // changed to half value for homing
-       stepper.setMaxSpeed(StepsPerSecond);  // steps per second see below -
-       stepper.setCurrentPosition(0);        // wherever the motor is now is set to position 0
-       stepper.setAcceleration(normalAcceleration); // steps per second per second.
+       SlewStatus = false;                     // controls the slewto azimuth motor control - we don't want this on now
+       stepper.moveTo(150000000);              // positive number means clockwise in accelstepper library. This number must be sufficiently large
+                                               // to provide enough steps to reach the target. Todo - check the No is large enough for a full rotation.
+
+       stepper.setMaxSpeed(StepsPerSecond/2.0);  // steps per second half speed for homing -
+       stepper.setCurrentPosition(0);          // wherever the motor is now is set to position 0
+       stepper.setAcceleration(normalAcceleration/2.0); // half normal for homing
 
        PowerOn(); 
        homing = true;               // used in loop() to control motor movement
