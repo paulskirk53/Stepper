@@ -366,6 +366,7 @@ void loop()
   if (homeSensor == LOW)
   {
     homing = false;
+    PowerOff();
   }
 
 
