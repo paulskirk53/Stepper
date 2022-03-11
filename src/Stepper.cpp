@@ -298,6 +298,8 @@ void loop()
        PowerOn(); 
        homing = true;               // used in loop() to control motor movement
 
+       // todo send to monitor - started homing
+
        // resetViaSWR();        // resetting the CPU is the only non blocking way to trigger the home procedure
 
       //code ideas for FH 
@@ -367,6 +369,8 @@ void loop()
   {
     homing = false;
     PowerOff();
+    // todo send to monitor - finished homing
+
   }
 
 
