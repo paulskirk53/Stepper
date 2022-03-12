@@ -300,8 +300,7 @@ void loop()
 
        // todo send to monitor - started homing
 
-       // resetViaSWR();        // resetting the CPU is the only non blocking way to trigger the home procedure
-
+       
       //code ideas for FH 
       /*
       
