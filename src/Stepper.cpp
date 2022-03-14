@@ -162,10 +162,10 @@ void loop()
     if (monitorReceipt.indexOf("stopdata", 0) > -1)
       {
       
-        monitorSendFlag = false;             // this disables the data stream to the monitor program
+        monitorSendFlag = false;             // this disables the data stream to the monitor program to stop flooding the serial port when the monitor program is connecting
       }
 
-      if (monitorReceipt.indexOf("stepper", 0) > -1)
+      if (monitorReceipt.indexOf("stepper", 0) > -1)    //This is the identifying string for this MCU, it facilitates autoconnection in the monitor C# program
       {
         Monitor.print("stepper#");
         monitorSendFlag = true;             // this enables the data stream to the monitor program
@@ -174,10 +174,10 @@ void loop()
       {
         Monitor.print("resetting");
         // ASCOM.print("get this");
-        // TODO MAYBE REINSTATE THE LINE BELOW - done
+        
         resetViaSWR();
       }
-  }
+  }   //ENDIF MONITOR AVAILABLE
 
   if (ASCOM.available() > 0) // when serial data arrives from the driver on USB capture it into a string
   {
@@ -267,11 +267,13 @@ void loop()
 
       if (SlewStatus)
       {
+        
         ASCOM.print("Moving#");
         // stepper.run();
       }
       else
       {
+        
         ASCOM.print("Notmoving#"); // sent to ASCOM serial and picked up by the ASCOM driver
       }
       receivedData = "";
@@ -288,30 +290,21 @@ void loop()
     if (receivedData.indexOf("FH", 0) > -1)
     {
        SlewStatus = false;                     // controls the slewto azimuth motor control - we don't want this on now
-       stepper.moveTo(150000000);              // positive number means clockwise in accelstepper library. This number must be sufficiently large
-                                               // to provide enough steps to reach the target. Todo - check the No is large enough for a full rotation.
-
-       stepper.setMaxSpeed(StepsPerSecond/2.0);  // steps per second half speed for homing -
-       stepper.setCurrentPosition(0);          // wherever the motor is now is set to position 0
+       StepsPerSecond = 300.0;              // changed following empirical testing Oct 2020
+       normalAcceleration = 140.0;          // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
+       stepper.setMaxSpeed(StepsPerSecond); // steps per second see below -
+       stepper.setCurrentPosition(0);            // wherever the motor is now is set to position 0
        stepper.setAcceleration(normalAcceleration/2.0); // half normal for homing
+
+       stepper.moveTo(150000000);
 
        PowerOn(); 
        homing = true;               // used in loop() to control motor movement
 
        // todo send to monitor - started homing
-
-       
-      //code ideas for FH 
-      /*
+      TargetMessage = "Started Homing ";
       
-      SPI exchange homebyte  - done via getcurrentazimuth() - check to see that this is returned properly
-      while ! homebyte
-      {
-      run motor
-      }
-      stop motor
-      */
-      
+      receivedData = "";
 
     }
 
@@ -319,58 +312,80 @@ void loop()
 
   } // end ASCOM Available
 
-  if (!homing)                // i.e we are not homing
-  {
-    WithinFiveDegrees();      // only do this if we're not homing
-  }
+  if (homing==false)                // i.e we are not homing
+    {
+      WithinFiveDegrees();      // only do this if we're not homing
+    }
 
   if (SlewStatus) // if the slew status is true, run the stepper
     {
+      movementstate = "Moving.  "; // for updating the lcdpanel
+      stepper.run();
 
-    stepper.run();
+      // update the LCD info
+      //
+      if ((millis() - pkstart) > 1000.0) // one second checks for azimuth value as the dome moves
+        {
+          
+          SendToMonitor();
 
-    // update the LCD info
-    //
-    if ((millis() - pkstart) > 1000.0) // one second checks for azimuth value as the dome moves
-    {
-      // TODO UNCOMMENT THE LINE BELOW
-      SendToMonitor();
-
-      pkstart = millis();
+          pkstart = millis();
+        }
     }
-  }
+    else
+    {
+      movementstate = "Stopped.  "; // for updating the lcdpanel
+      QueryDir = "Awaiting Data";
+      if (homing==false)
+      {
+        PowerOff(); // power off the stepper now that the slew to azimuth target is reached.  
+      }
+    }
 
-  if (abs(stepper.distanceToGo()) < 20)
-  {
-    SlewStatus = false;           // used to stop the motor in main loop
-    movementstate = "Stopped.  "; // for updating the lcdpanel
+   if( (abs(stepper.distanceToGo()) < 20) )  // otherwise when no movement is happening the sermon gets flooded BUT WHEN i DID THE CHANGE IT CRASHED THE MONITOR PROGRAM
+     {
+       SlewStatus = false;           // used to stop the motor in main loop
+       //movementstate = "Stopped.  "; // for updating the lcdpanel
 
-    // Serial.print("ABS STEPPER distance to go....");
-    // Serial.println();
-    // update the LCD
-    TargetMessage = "Target achieved ";
+       // Serial.print("ABS STEPPER distance to go....");
+       // Serial.println();
+       // update the LCD
+       TargetMessage = "Target achieved ";
 
-    SendToMonitor();
+       SendToMonitor();    //TODO CHECK WHETHER A 1 SECOND TIMER CALL TO THIS WOULD BE BETTER IN THE MAIN LOOP
+       
+     }
+     else   // distance to go is > 20
+     {
+       if (homing)
+       {TargetMessage = "Started Homing ";
+       }
+       else
+       {
+       TargetMessage = "Awaiting Target ";
 
-    PowerOff(); // power off the stepper now that the target is reached.
-  }
-  else
-  {
-    movementstate = "Moving"; // for updating the lcdpanel
-    TargetMessage = "Awaiting Target ";
+       }
+       stepper.run();
+     }
+
     stepper.run();
-  }
 
-  stepper.run();
+    getCurrentAzimuth();
 
-  getCurrentAzimuth();
-  if (homeSensor == LOW)
-  {
-    homing = false;
-    PowerOff();
-    // todo send to monitor - finished homing
+  if (homeSensor == true)               // THE SPI TRANSACTION RETURNS homesensor = TRUE WHEN HOME POSITION IS FOUND
+    {
+      homing = false;
+      PowerOff();
+      // send to monitor - finished homing
+      TargetMessage = "Finished Homing ";
+    }
 
-  }
+  
+  if ((millis() - pkstart) > 1000.0) // one second checks for azimuth value as the dome moves
+   {
+      SendToMonitor();
+      pkstart = millis();
+   }
 
 
 } // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -507,31 +522,22 @@ void SendToMonitor()
 {
   if (monitorSendFlag)
   {
-  Monitor.print("START#" + String(TargetAzimuth) + '#' + movementstate + '#' + QueryDir + '#' + TargetMessage + '#');
+    Monitor.print("START#" + String(TargetAzimuth) + '#' + movementstate + '#' + QueryDir + '#' + TargetMessage + '#');
 
-  /*
-  the line above can be removed and the commented section below reinstated. Done to try to improve speed
-    Monitor.print("START#");
-    Monitor.print(String(TargetAzimuth)        + '#');
-    Monitor.print(movementstate                + '#');
-    Monitor.print(QueryDir                     + '#');
-    Monitor.print(TargetMessage                + '#');
-    */
-
-  CurrentAzimuth = getCurrentAzimuth(); // uses SPI
+    CurrentAzimuth = getCurrentAzimuth(); // uses SPI
   
-  Monitor.print(String(CDArray[CurrentAzimuth]) + '#' + String(EncoderReplyCounter) + '#'); // in the monitor program this is called distance to target
+    Monitor.print(String(CDArray[CurrentAzimuth]) + '#' + String(EncoderReplyCounter) + '#'); // in the monitor program this is called distance to target
 
-  // Monitor.print(String(EncoderReplyCounter)  + '#');
-  /*
-  list of data need by the monitor program
-  targetazimuth
-  movementstate
-  querydir
-  targetmessage
-  distance to target
-  encoderreplycounter
-  */
+    // Monitor.print(String(EncoderReplyCounter)  + '#');
+    /*
+    list of data need by the monitor program
+    targetazimuth
+    movementstate
+    querydir
+    targetmessage
+    distance to target
+    encoderreplycounter
+    */
   }
 }
 
