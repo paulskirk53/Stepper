@@ -4,7 +4,7 @@
 
 Note Note Note Note Note Note
 
-This is a tril to try to find a more elegant / efficient way to include a findhome feature
+This is a TRIAL to try to find a more elegant / efficient way to include a findhome feature
 
 
 Note Note Note Note Note Note
@@ -38,6 +38,7 @@ void Emergency_Stop(int azimuth, String mess);
 String WhichDirection();
 void WithinFiveDegrees();
 int getCurrentAzimuth();
+void check_If_SlewingTargetAchieved();
 void SendToMonitor();
 void PowerOn();
 void PowerOff();
@@ -66,7 +67,9 @@ AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin, true);
 
 String receivedData;
 boolean DoTheDeceleration;
-boolean SlewStatus;   // controls whether the stepper is stepped in the main loop
+boolean Slewing; // controls whether the stepper is stepped in the main loop
+boolean homing;
+boolean homeSensor;
 float StepsPerSecond; // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
 boolean TargetChanged = false;
@@ -101,7 +104,7 @@ void setup()
 
   // Change below to suit the stepper
 
-  SlewStatus = false;
+  Slewing = false;
   StepsPerSecond = 300.0;              // changed following empirical testing Oct 2020
   normalAcceleration = 140.0;          // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
   stepper.setMaxSpeed(StepsPerSecond); // steps per second see below -
@@ -173,7 +176,7 @@ void loop()
       // TODO MAYBE REINSTATE THE LINE BELOW - done
       resetViaSWR();
     }
-  }  // endif Monitor.available
+  } // endif Monitor.available
 
   if (ASCOM.available() > 0) // when serial data arrives from the driver on USB capture it into a string
   {
@@ -213,9 +216,9 @@ void loop()
       //  Serial.print("in slewto target received ");
       //  Serial.println(TargetAzimuth);
 
-      if (SlewStatus == false) // only do this if not slewing
+      if (Slewing == false) // only do this if not slewing
       {
-        SlewStatus = true;
+        Slewing = true;
         stepper.setAcceleration(normalAcceleration); // set the acceleration
         stepper.setCurrentPosition(0);               // initialise the stepper position
         QueryDir = WhichDirection();                 // work out which direction of travel is optimum
@@ -240,10 +243,8 @@ void loop()
         // MOVED THE FOLLOWING FROM HERE TO NEXT LEVEL receivedData = "";
       }
       receivedData = "";
-    }  // end if SA
+    } // end if SA
 
-
-   
     //*************************************************************************
     //  ******** code for SL process below *************************************
     //**** example of data sent by driver SL#  **************************
@@ -253,7 +254,7 @@ void loop()
     if (receivedData.indexOf("SL", 0) > -1) //
     {
 
-      if (SlewStatus)
+      if (Slewing)
       {
         ASCOM.print("Moving#");
         // stepper.run();
@@ -274,22 +275,69 @@ void loop()
 
     if (receivedData.indexOf("FH", 0) > -1)
     {
-      //
+       StepsPerSecond = 300.0;                 // changed following empirical testing Oct 2020
+       normalAcceleration = 140.0;             // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
+       stepper.setMaxSpeed(StepsPerSecond);    // steps per second see below -
+       stepper.setCurrentPosition(0);          // wherever the motor is now is set to position 0
+       stepper.setAcceleration(normalAcceleration/2.0); // half normal for homing
+
+       stepper.moveTo(150000000);              // this number has to be large enough for the drive to be able to complete a full circle.
+
+       PowerOn(); 
+       homing = true;                          // used in loop() to control motor movement
+
+       // send to monitor - started homing
+      TargetMessage  = "Started Homing ";
+      QueryDir       = "clockwise";                  //set the direction of movement - this is also sent to the monitor program
+      movementstate  = "Homing...";
+
+      receivedData = "";
+
     }
 
   } // end if ASCOM Available
 
-//so from here down is code to deliver SA function
+  // so from here down is code to deliver SA function
 
-
-  WithinFiveDegrees();
-
-  if (SlewStatus) // if the slew status is true, run the stepper and update the data in the monitor program
+  // start grouping for Slewing functions here
+  if (Slewing) // if the slew status is true, run the stepper and update the data in the monitor program
   {
+    WithinFiveDegrees();
 
     stepper.run();
 
     // update the LCD info
+    //
+    /*
+    if ((millis() - pkstart) > 1000.0) // one second checks for azimuth value as the dome moves
+    {
+      // TODO UNCOMMENT THE LINE BELOW
+      SendToMonitor();
+
+      pkstart = millis();
+    }
+    */
+
+    check_If_SlewingTargetAchieved();   //checks if slew is ended and updates monitor
+
+  }  // endif Slewing
+
+if (homing)
+{
+   getCurrentAzimuth();                      // PART OF THE spi TRANSACTION GETS THE HOMESENSOR STATE
+  if (homeSensor==true)                     // true indicates the sensor at the home position has been activated
+  {
+    movementstate = "Not Moving";
+    QueryDir      = "None";
+    TargetMessage = "Homing Complete";
+    homing        = false;
+    PowerOff();
+  }
+
+
+}
+
+ // update the LCD info
     //
     if ((millis() - pkstart) > 1000.0) // one second checks for azimuth value as the dome moves
     {
@@ -298,30 +346,10 @@ void loop()
 
       pkstart = millis();
     }
-  }
 
-  if (abs(stepper.distanceToGo()) < 20)
-  {
-    SlewStatus = false;           // used to stop the motor in main loop
-    movementstate = "Stopped.  "; // for updating the lcdpanel
 
-    // Serial.print("ABS STEPPER distance to go....");
-    // Serial.println();
-    // update the LCD
-    TargetMessage = "Target achieved ";
 
-    SendToMonitor();
-
-    PowerOff(); // power off the stepper now that the target is reached.
-  }
-  else
-  {
-    movementstate = "Moving"; // for updating the lcdpanel
-    TargetMessage = "Awaiting Target ";
-    stepper.run();
-  }
-
-  stepper.run();
+  stepper.run();   // stepper run - works for slewing and for findHome
 
 } // end void Loop //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -329,7 +357,7 @@ void Emergency_Stop(int azimuth, String mess)
 {
 
   stepper.stop();
-  SlewStatus = false;
+  Slewing = false;
 
   // turn off power to the stepper
   PowerOff();
@@ -395,7 +423,7 @@ int getCurrentAzimuth()
 
   byte LB;    // holds the low byte returned from slave
   byte HB;    // ditto highbyte
-  byte dummy; //
+  byte dummy; // used for 1st SPI transfer in the sequence
 
   boolean validaz = false;
 
@@ -420,6 +448,10 @@ int getCurrentAzimuth()
     trigger = 'H';
     HB = SPI.transfer(trigger); // this returns the high byte
     delayMicroseconds(20);      // propagation delay required by SPI
+
+    trigger = 'S';
+    homeSensor = SPI.transfer(trigger);
+    delayMicroseconds(20); // propagation delay required by SPI
 
     digitalWrite(SS, HIGH); // disable Slave Select
 
@@ -448,6 +480,34 @@ int getCurrentAzimuth()
   return azimuth;
 
 } // end getCurrentAzimuth()
+
+void check_If_SlewingTargetAchieved()
+{
+
+    if (abs(stepper.distanceToGo()) < 20)
+    {
+      Slewing = false;              // used to stop the motor in main loop
+      movementstate = "Stopped.  "; // for updating the lcdpanel
+
+      // Serial.print("ABS STEPPER distance to go....");
+      // Serial.println();
+      // update the LCD
+      TargetMessage = "Target achieved ";
+      QueryDir = "None";
+
+      SendToMonitor();
+
+      PowerOff(); // power off the stepper now that the target is reached.
+    }
+    else
+    {
+      movementstate = "Moving"; // for updating the lcdpanel
+      TargetMessage = "Awaiting Target ";
+      stepper.run();
+    }
+
+
+}
 
 void SendToMonitor()
 {
