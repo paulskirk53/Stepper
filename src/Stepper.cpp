@@ -290,18 +290,18 @@ void loop()
     if (receivedData.indexOf("FH", 0) > -1)
     {
        SlewStatus = false;                     // controls the slewto azimuth motor control - we don't want this on now
-       StepsPerSecond = 300.0;              // changed following empirical testing Oct 2020
-       normalAcceleration = 140.0;          // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
-       stepper.setMaxSpeed(StepsPerSecond); // steps per second see below -
-       stepper.setCurrentPosition(0);            // wherever the motor is now is set to position 0
+       StepsPerSecond = 300.0;                 // changed following empirical testing Oct 2020
+       normalAcceleration = 140.0;             // changed following empirical testing October 17th 2020 - changed from 40 to 20 for trial
+       stepper.setMaxSpeed(StepsPerSecond);    // steps per second see below -
+       stepper.setCurrentPosition(0);          // wherever the motor is now is set to position 0
        stepper.setAcceleration(normalAcceleration/2.0); // half normal for homing
 
-       stepper.moveTo(150000000);
+       stepper.moveTo(150000000);              // this number has to be large enough for the drive to be able to complete a full circle.
 
        PowerOn(); 
-       homing = true;               // used in loop() to control motor movement
+       homing = true;                          // used in loop() to control motor movement
 
-       // todo send to monitor - started homing
+       // send to monitor - started homing
       TargetMessage = "Started Homing ";
       
       receivedData = "";
@@ -355,24 +355,25 @@ void loop()
        SendToMonitor();    //TODO CHECK WHETHER A 1 SECOND TIMER CALL TO THIS WOULD BE BETTER IN THE MAIN LOOP
        
      }
-     else   // distance to go is > 20
+     else   // distance to go is > 20 i.e not close to target 
      {
        if (homing)
-       {TargetMessage = "Started Homing ";
+       {
+         TargetMessage = "Started Homing ";   //this gets sent to the monitor program
        }
        else
        {
-       TargetMessage = "Awaiting Target ";
-
+       TargetMessage = "Awaiting Target ";   
        }
+
        stepper.run();
      }
 
     stepper.run();
 
-    getCurrentAzimuth();
+    getCurrentAzimuth();                 // the routine sets the homesensor global var which is tested below
 
-  if (homeSensor == true)               // THE SPI TRANSACTION RETURNS homesensor = TRUE WHEN HOME POSITION IS FOUND
+  if (homeSensor == true)               // homesensor = TRUE WHEN HOME POSITION IS FOUND
     {
       homing = false;
       PowerOff();
