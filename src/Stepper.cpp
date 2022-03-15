@@ -2,12 +2,12 @@
 
 
 
-Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note
+Note Note Note Note Note Note
 
-This is the with SPI-Comms version - undergoing changes to incorporate SPI between the MCUs - pins for SPI freed up 15-1-22
+This is a tril to try to find a more elegant / efficient way to include a findhome feature
 
 
-Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note Note
+Note Note Note Note Note Note
 */
 
 //
@@ -69,21 +69,20 @@ boolean DoTheDeceleration;
 boolean SlewStatus;   // controls whether the stepper is stepped in the main loop
 float StepsPerSecond; // used in stepper.setMaxSpeed - 50 the controller (MAH860) IS SET TO step size 0.25
 
-boolean TargetChanged   = false;
-boolean monitorSendFlag = false;     // this only becomes true after the MCU is connected successfully and when true, the data stream to the monitor program is enabled
-float normalAcceleration;            // was incorrectly set to data type int
+boolean TargetChanged = false;
+boolean monitorSendFlag = false; // this only becomes true after the MCU is connected successfully and when true, the data stream to the monitor program is enabled
+float normalAcceleration;        // was incorrectly set to data type int
 
-int stepsToTarget       = 0;
-int DecelValue          = 800; // set after empirical test Oct 2020
+int stepsToTarget = 0;
+int DecelValue = 800; // set after empirical test Oct 2020
 int EncoderReplyCounter = 0;
-int savedAzimuth        = 0;
-long pkstart            = 0.0l; // note i after 0.0 denotes long number - same type as millis()
+int savedAzimuth = 0;
+long pkstart = 0.0l; // note i after 0.0 denotes long number - same type as millis()
 
 String TargetMessage = "";
-String QueryDir      = "No Direction";
+String QueryDir = "No Direction";
 String movementstate = "Not Moving";
-String pkversion     = "6.0";
-
+String pkversion = "6.0";
 
 /*
   --------------------------------------------------------------------------------------------------------------------------------------------
@@ -92,8 +91,6 @@ String pkversion     = "6.0";
 
 void setup()
 {
-
-
 
   pinMode(power_pin, OUTPUT);
   digitalWrite(power_pin, LOW); // initialise the pin state so that the mosfet gate is Low and therefore power to the MA860H is off
@@ -136,9 +133,7 @@ void setup()
 
   TargetAzimuth = getCurrentAzimuth(); // uses SPI
 
-
   initialiseCDArray();
-  
 
   // END SMASH UP CODE
 
@@ -160,16 +155,16 @@ void loop()
   {
     String monitorReceipt = Monitor.readStringUntil('#');
 
-if (monitorReceipt.indexOf("stopdata", 0) > -1)
+    if (monitorReceipt.indexOf("stopdata", 0) > -1)
     {
-      
-      monitorSendFlag = false;             // this disables the data stream to the monitor program
+
+      monitorSendFlag = false; // this disables the data stream to the monitor program
     }
 
     if (monitorReceipt.indexOf("stepper", 0) > -1)
     {
       Monitor.print("stepper#");
-      monitorSendFlag = true;             // this enables the data stream to the monitor program
+      monitorSendFlag = true; // this enables the data stream to the monitor program
     }
     if (monitorReceipt.indexOf("reset", 0) > -1)
     {
@@ -178,7 +173,7 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
       // TODO MAYBE REINSTATE THE LINE BELOW - done
       resetViaSWR();
     }
-  }
+  }  // endif Monitor.available
 
   if (ASCOM.available() > 0) // when serial data arrives from the driver on USB capture it into a string
   {
@@ -223,7 +218,7 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
         SlewStatus = true;
         stepper.setAcceleration(normalAcceleration); // set the acceleration
         stepper.setCurrentPosition(0);               // initialise the stepper position
-        QueryDir = WhichDirection();                 // work out which direction of travle is optimum
+        QueryDir = WhichDirection();                 // work out which direction of travel is optimum
         // todo remove 2 lines blow
         // ASCOM.print("So the direction is  ");
         // ASCOM.println(QueryDir);
@@ -245,9 +240,10 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
         // MOVED THE FOLLOWING FROM HERE TO NEXT LEVEL receivedData = "";
       }
       receivedData = "";
-    }
-    // todo check the stmt below is req'd
-    // stepper.run();
+    }  // end if SA
+
+
+   
     //*************************************************************************
     //  ******** code for SL process below *************************************
     //**** example of data sent by driver SL#  **************************
@@ -270,7 +266,6 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
 
     } // end SL case
 
-
     //*************************************************************************
     //******** code for FH process below **************************************
     //**** example of data sent by driver FH#  **************************
@@ -279,27 +274,17 @@ if (monitorReceipt.indexOf("stopdata", 0) > -1)
 
     if (receivedData.indexOf("FH", 0) > -1)
     {
-      //code ideas for FH 
-      /*
-      set a flag here which is detected in main loop to run the motor in the same way slewtatus does. This hands off motor control without blocking
-      SPI exchange homebyte
-      while ! homebyte
-      {
-      run motor
-      }
-      stop motor
-      */
-      
-
+      //
     }
 
+  } // end if ASCOM Available
 
+//so from here down is code to deliver SA function
 
-  } // end ASCOM Available
 
   WithinFiveDegrees();
 
-  if (SlewStatus) // if the slew status is true, run the stepper
+  if (SlewStatus) // if the slew status is true, run the stepper and update the data in the monitor program
   {
 
     stepper.run();
@@ -468,31 +453,31 @@ void SendToMonitor()
 {
   if (monitorSendFlag)
   {
-  Monitor.print("START#" + String(TargetAzimuth) + '#' + movementstate + '#' + QueryDir + '#' + TargetMessage + '#');
+    Monitor.print("START#" + String(TargetAzimuth) + '#' + movementstate + '#' + QueryDir + '#' + TargetMessage + '#');
 
-  /*
-  the line above can be removed and the commented section below reinstated. Done to try to improve speed
-    Monitor.print("START#");
-    Monitor.print(String(TargetAzimuth)        + '#');
-    Monitor.print(movementstate                + '#');
-    Monitor.print(QueryDir                     + '#');
-    Monitor.print(TargetMessage                + '#');
+    /*
+    the line above can be removed and the commented section below reinstated. Done to try to improve speed
+      Monitor.print("START#");
+      Monitor.print(String(TargetAzimuth)        + '#');
+      Monitor.print(movementstate                + '#');
+      Monitor.print(QueryDir                     + '#');
+      Monitor.print(TargetMessage                + '#');
+      */
+
+    CurrentAzimuth = getCurrentAzimuth(); // uses SPI
+
+    Monitor.print(String(CDArray[CurrentAzimuth]) + '#' + String(EncoderReplyCounter) + '#'); // in the monitor program this is called distance to target
+
+    // Monitor.print(String(EncoderReplyCounter)  + '#');
+    /*
+    list of data need by the monitor program
+    targetazimuth
+    movementstate
+    querydir
+    targetmessage
+    distance to target
+    encoderreplycounter
     */
-
-  CurrentAzimuth = getCurrentAzimuth(); // uses SPI
-  
-  Monitor.print(String(CDArray[CurrentAzimuth]) + '#' + String(EncoderReplyCounter) + '#'); // in the monitor program this is called distance to target
-
-  // Monitor.print(String(EncoderReplyCounter)  + '#');
-  /*
-  list of data need by the monitor program
-  targetazimuth
-  movementstate
-  querydir
-  targetmessage
-  distance to target
-  encoderreplycounter
-  */
   }
 }
 
