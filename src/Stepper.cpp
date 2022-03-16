@@ -80,7 +80,8 @@ int stepsToTarget = 0;
 int DecelValue = 800; // set after empirical test Oct 2020
 int EncoderReplyCounter = 0;
 int savedAzimuth = 0;
-long pkstart = 0.0l; // note i after 0.0 denotes long number - same type as millis()
+long monitorTimerInterval = 0.0l; // note l after 0.0 denotes long number - same type as millis()
+long azimuthTimerInterval = 0.0l;
 
 String TargetMessage = "";
 String QueryDir = "No Direction";
@@ -110,14 +111,15 @@ void setup()
   stepper.setMaxSpeed(StepsPerSecond); // steps per second see below -
   stepper.setCurrentPosition(0);
   stepper.setAcceleration(normalAcceleration); // steps per second per second.
-  // Note V= acceleration * time, so a vlue of e.g. 1 step /s/s takes 10 secs to reach maxspeed of 10 or 15 secs to reach maxspeed 15 etc
-  //
-
+  
   // initialise
 
-  CurrentAzimuth = 0;
-  DoTheDeceleration = true; // used to set deceleration towards target azimuth
-  pkstart = millis();
+  CurrentAzimuth       = 0;
+  DoTheDeceleration    = true; // used to set deceleration towards target azimuth
+  monitorTimerInterval = millis();
+  azimuthTimerInterval = millis();
+
+  homeSensor = false;          // this later set in the getcurrentazimuth() spi transaction
 
   ASCOM.begin(19200);   // start serial ports ASCOM driver - usb with PC - rx0 tx0 and updi
   Encoder.begin(19200); // Link with the Encoder MCU
@@ -138,8 +140,7 @@ void setup()
 
   initialiseCDArray();
 
-  // END SMASH UP CODE
-
+  
 } // end setup
 
 /*
@@ -309,12 +310,12 @@ void loop()
     // update the LCD info
     //
     /*
-    if ((millis() - pkstart) > 1000.0) // one second checks for azimuth value as the dome moves
+    if ((millis() - monitorTimerInterval) > 1000.0) // one second checks for azimuth value as the dome moves
     {
       // TODO UNCOMMENT THE LINE BELOW
       SendToMonitor();
 
-      pkstart = millis();
+      monitorTimerInterval = millis();
     }
     */
 
@@ -324,13 +325,22 @@ void loop()
 
 if (homing)
 {
-   getCurrentAzimuth();                      // PART OF THE spi TRANSACTION GETS THE HOMESENSOR STATE
+  if ((millis() - azimuthTimerInterval) > 200.0) // one TENTH second checks for azimuth value as the dome moves
+  {
+    getCurrentAzimuth();                      // The spi transaction gets the homesensor state
+    azimuthTimerInterval = millis();
+    ASCOM.print("VALUE OF HOMESENSOR IS true if activated ");
+    ASCOM.println(homeSensor);
+  }
+
   if (homeSensor==true)                     // true indicates the sensor at the home position has been activated
   {
     movementstate = "Not Moving";
     QueryDir      = "None";
     TargetMessage = "Homing Complete";
     homing        = false;
+    homeSensor    = false;      //homing is finished, so set the sensor to false. It may be set true again by calls to getcurrentazimuth()
+    //load and try
     PowerOff();
   }
 
@@ -339,12 +349,12 @@ if (homing)
 
  // update the LCD info
     //
-    if ((millis() - pkstart) > 1000.0) // one second checks for azimuth value as the dome moves
+    if ((millis() - monitorTimerInterval) > 1000.0) // one second checks for azimuth value as the dome moves
     {
       // TODO UNCOMMENT THE LINE BELOW
       SendToMonitor();
 
-      pkstart = millis();
+      monitorTimerInterval = millis();
     }
 
 
