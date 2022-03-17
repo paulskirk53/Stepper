@@ -325,12 +325,12 @@ void loop()
 
 if (homing)
 {
-  if ((millis() - azimuthTimerInterval) > 200.0) // one TENTH second checks for azimuth value as the dome moves
+  if ((millis() - azimuthTimerInterval) > 200.0) // one FIFTH second checks for HOMESENSOR STATE as the dome moves
   {
     getCurrentAzimuth();                      // The spi transaction gets the homesensor state
     azimuthTimerInterval = millis();
-    ASCOM.print("VALUE OF HOMESENSOR IS true if activated ");
-    ASCOM.println(homeSensor);
+    //ASCOM.print("VALUE OF HOMESENSOR IS true if activated ");
+    //ASCOM.println(homeSensor);
   }
 
   if (homeSensor==true)                     // true indicates the sensor at the home position has been activated
