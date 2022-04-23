@@ -44,6 +44,7 @@ void PowerOn();
 void PowerOff();
 void resetViaSWR();
 void lightup();
+bool checkForValidAzimuth();
 static void SPI0_init(void);
 
 // end declarations
@@ -77,7 +78,7 @@ boolean monitorSendFlag = false; // this only becomes true after the MCU is conn
 float normalAcceleration;        // was incorrectly set to data type int
 
 int stepsToTarget = 0;
-int DecelValue = 800; // set after empirical test Oct 2020
+int DecelValue = 400; // set at this value of 800 after empirical test Oct 2020. Update April 22 with Pulsar dome this may need to be halved to 400 
 int EncoderReplyCounter = 0;
 int savedAzimuth = 0;
 long monitorTimerInterval = 0.0l; // note l after 0.0 denotes long number - same type as millis()
@@ -211,39 +212,49 @@ void loop()
       receivedData.remove(0, 2);
 
       TargetAzimuth = receivedData.toInt(); // store the target azimuth for comparison with current position
-      TargetChanged = true;
-
-      //  Serial.println();
-      //  Serial.print("in slewto target received ");
-      //  Serial.println(TargetAzimuth);
-
-      if (Slewing == false) // only do this if not slewing
+      // the way the code works is to treat a rrquest for az = 360 as az =0 , hence the if clause below
+      if (TargetAzimuth == 360)
       {
-        Slewing = true;
-        stepper.setAcceleration(normalAcceleration); // set the acceleration
-        stepper.setCurrentPosition(0);               // initialise the stepper position
-        QueryDir = WhichDirection();                 // work out which direction of travel is optimum
-        // todo remove 2 lines blow
-        // ASCOM.print("So the direction is  ");
-        // ASCOM.println(QueryDir);
-
-        if (QueryDir == "clockwise")
-        {
-          stepper.moveTo(150000000); // positive number means clockwise in accelstepper library. This number must be sufficiently large
-                                     // to provide enough steps to reach the target.
-        }
-
-        if (QueryDir == "anticlockwise")
-        {
-
-          stepper.moveTo(-150000000); // negative is anticlockwise in accelstepper library
-        }
-
-        DoTheDeceleration = true;
-
-        // MOVED THE FOLLOWING FROM HERE TO NEXT LEVEL receivedData = "";
+        TargetAzimuth = 0;
       }
-      receivedData = "";
+      bool AzOK = checkForValidAzimuth();
+      if (AzOK)
+      {
+        TargetChanged = true;
+
+        //  Serial.println();
+        //  Serial.print("in slewto target received ");
+        //  Serial.println(TargetAzimuth);
+
+        if (Slewing == false) // only do this if not slewing
+        {
+          Slewing = true;
+          stepper.setAcceleration(normalAcceleration); // set the acceleration
+          stepper.setCurrentPosition(0);               // initialise the stepper position
+          QueryDir = WhichDirection();                 // work out which direction of travel is optimum
+          // todo remove 2 lines blow
+          // ASCOM.print("So the direction is  ");
+          // ASCOM.println(QueryDir);
+
+          if (QueryDir == "clockwise")
+          {
+            stepper.moveTo(150000000); // positive number means clockwise in accelstepper library. This number must be sufficiently large
+                                       // to provide enough steps to reach the target.
+          }
+
+          if (QueryDir == "anticlockwise")
+          {
+
+            stepper.moveTo(-150000000); // negative is anticlockwise in accelstepper library
+          }
+
+          DoTheDeceleration = true;
+
+          // MOVED THE FOLLOWING FROM HERE TO NEXT LEVEL receivedData = "";
+        }
+        receivedData = "";
+
+      } // end if azok
     } // end if SA
 
     //*************************************************************************
@@ -580,6 +591,17 @@ void lightup()
     delay(1000);
     digitalWrite(ledpin, LOW);
     delay(1000);
+  }
+}
+bool checkForValidAzimuth()
+{
+  if ( (TargetAzimuth >= 0) && (TargetAzimuth <=359) )
+  {
+    return true;
+  }
+  else
+  {
+    return false;
   }
 }
 
