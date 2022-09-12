@@ -29,6 +29,8 @@
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Blink-LED-AVR/src",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Blink-Led-4809/include",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Blink-Led-4809/src",
+                "C:/Users/Paul/Documents/PlatformIO/Projects/Development/CanonLens/include",
+                "C:/Users/Paul/Documents/PlatformIO/Projects/Development/CanonLens/src",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Debug Setup/include",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Debug Setup/src",
                 "C:/Users/Paul/Documents/PlatformIO/Projects/Development/USART-Example-4809/include",
@@ -45,7 +47,6 @@
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Servo/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SoftwareSerial/src",
                 "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Wire/src",
-                "C:/Users/Paul/.platformio/packages/tool-unity",
                 ""
             ],
             "browse": {
@@ -72,6 +73,8 @@
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Blink-LED-AVR/src",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Blink-Led-4809/include",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Blink-Led-4809/src",
+                    "C:/Users/Paul/Documents/PlatformIO/Projects/Development/CanonLens/include",
+                    "C:/Users/Paul/Documents/PlatformIO/Projects/Development/CanonLens/src",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Debug Setup/include",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/Debug Setup/src",
                     "C:/Users/Paul/Documents/PlatformIO/Projects/Development/USART-Example-4809/include",
@@ -88,12 +91,11 @@
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Servo/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/SoftwareSerial/src",
                     "C:/Users/Paul/.platformio/packages/framework-arduino-megaavr-megacorex/libraries/Wire/src",
-                    "C:/Users/Paul/.platformio/packages/tool-unity",
                     ""
                 ]
             },
             "defines": [
-                "PLATFORMIO=50205",
+                "PLATFORMIO=60104",
                 "ARDUINO_AVR_ATMEGA4809",
                 "F_CPU=20000000L",
                 "ARDUINO_ARCH_MEGAAVR",
