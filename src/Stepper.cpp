@@ -166,9 +166,9 @@ void loop()
       monitorSendFlag = false; // this disables the data stream to the monitor program
     }
 
-    if (monitorReceipt.indexOf("stepper", 0) > -1)
+    if (monitorReceipt.indexOf("monitorstepper", 0) > -1)
     {
-      Monitor.print("stepper#");
+      Monitor.print("monitorstepper#");
       monitorSendFlag = true; // this enables the data stream to the monitor program
     }
     if (monitorReceipt.indexOf("reset", 0) > -1)
